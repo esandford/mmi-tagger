@@ -1,3 +1,4 @@
+from __future__ import division, print_function
 import data
 import math
 import random
@@ -36,7 +37,7 @@ class Control(nn.Module):
         try:
             for epoch in range(1, epochs + 1):
                 avg_loss, acc, vm, epoch_time = self.do_epoch(data, optimizer)
-                bits = (- avg_loss) * math.log2(math.e)
+                bits = (- avg_loss) * math.log(math.e,2)
                 self.logger.log('| epoch {:3d} | loss {:6.2f} | {:6.2f} bits | '
                                 'acc {:6.2f} | vm {:6.2f} | time {:10s}'.format(
                                     epoch, avg_loss, bits, acc, vm,
