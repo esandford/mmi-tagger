@@ -63,7 +63,7 @@ class Data(object):
                     self.systems[i][j + 1: min(len(self.systems[i]), j + width) + 1]
 
             left = [self.i2planet[k] for k in left]
-            right = [self.i2planet[h] for h in right]
+            right = [self.i2planet[k] for k in right]
 
             # below for POS tagging example, but analogous for planets, except that each "planet" 
             #   is an array of data rather than an index to a word:
@@ -77,8 +77,8 @@ class Data(object):
 
         contexts = [get_context(i, j, width) for (i, j) in batch] # list of [left,right]s to make up X
         targets = [self.systems[i][j] for (i, j) in batch]        # list of individual words to make up Y
-        
-        X = torch.LongTensor(contexts).to(device)  # B x 2width, where B = batch size = 15 for basic example
-        Y1 = torch.LongTensor(targets).to(device)  # B
+        targets = [self.i2planet[k] for k in targets]
 
+        X = torch.LongTensor(contexts).to(device)  # B x 2width x num_planet_features, where B = batch size = 15 for basic example
+        Y1 = torch.LongTensor(targets).to(device)  # B x num_planet_features
         return X, Y1
