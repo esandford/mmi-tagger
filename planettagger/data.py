@@ -79,6 +79,6 @@ class Data(object):
         targets = [self.systems[i][j] for (i, j) in batch]        # list of individual words to make up Y
         targets = [self.i2planet[k] for k in targets]
 
-        X = torch.LongTensor(contexts).to(device)  # B x 2width x num_planet_features, where B = batch size = 15 for basic example
-        Y1 = torch.LongTensor(targets).to(device)  # B x num_planet_features
+        X = torch.FloatTensor(contexts).to(device)  # B x 2width x num_planet_features, where B = batch size = 15 for basic example
+        Y1 = torch.FloatTensor(targets).to(device)  # B x num_planet_features
         return X, Y1
