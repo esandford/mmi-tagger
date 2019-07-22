@@ -8,14 +8,15 @@ from collections import Counter
 
 class Data(object):
 
-    def __init__(self, data_path):
+    def __init__(self, num_planet_features, data_path):
         self.data_path = data_path
-        self.PAD = '<pad>'
+        self.PAD = np.zeros(num_planet_features)
+        self.PAD = tuple(self.PAD)
         self.systems = []   # will represent each training set planetary system as a list of indices
                             # e.g. [1,2,3,4,5],[6,7],[8,9] (each planet is unique, so we don't expect repeats)
         
         # "planet" defined by a list: [Teff, logg, [Fe/H], Rp/R*, P]
-        self.planet2i = {self.PAD: np.zeros(5)} #will contain each "planet" in the training set, uniquely
+        self.planet2i = {self.PAD: 0} #will contain each "planet" in the training set, uniquely
         self.i2planet = [self.PAD]
 
         self.label_counter = Counter()

@@ -15,7 +15,7 @@ def main(args):
     random.seed(args.seed)
     torch.manual_seed(args.seed)
     device = torch.device('cuda' if args.cuda else 'cpu')
-    data = Data(args.data)
+    data = Data(args.num_planet_features, args.data)
 
     model = MMIModel(args.num_planet_features, args.num_labels, args.width).to(device)
     logger = Logger(args.model + '.log', args.train)
