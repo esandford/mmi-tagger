@@ -40,6 +40,7 @@ class Data(object):
         """
         with open(self.data_path, 'r') as data_file:
             for line in data_file:
+                rel_indices = np.array(())
                 toks = line.split()
                 if toks:
                     self.sents.append([add(tok) for tok in toks])
