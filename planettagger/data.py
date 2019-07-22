@@ -2,6 +2,7 @@ from __future__ import division, print_function
 import os
 import random
 import torch
+import pickle
 
 from collections import Counter
 from torch.nn.utils.rnn import pad_sequence
@@ -35,15 +36,11 @@ class Data(object):
                 self.i2planet.append(p)
                 self.planet2i[p] = len(self.i2planet) - 1
             return self.planet2i[p]
-        """
-        tktk: following needs editing depending on the form of the planet data file
-        """
-        with open(self.data_path, 'r') as data_file:
-            for line in data_file:
-                rel_indices = np.array(())
-                toks = line.split()
-                if toks:
-                    self.sents.append([add(tok) for tok in toks])
+        
+        with open(self.data_path, "rb") as picklefile:
+            trainingDat = pickle.load(picklefile)
+            for sys in trainingDat:
+                self.systems.append([add(planet) for planet in sys])
 
         self.planet_counter = [planetcount[self.i2planet[i]] for i in range(len(self.i2planet))]
 
