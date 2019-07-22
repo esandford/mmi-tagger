@@ -1,12 +1,10 @@
 from __future__ import division, print_function
-import os
+import numpy as np
 import random
 import torch
 import pickle
 
 from collections import Counter
-from torch.nn.utils.rnn import pad_sequence
-
 
 class Data(object):
 
@@ -17,7 +15,7 @@ class Data(object):
                             # e.g. [1,2,3,4,5],[6,7],[8,9] (each planet is unique, so we don't expect repeats)
         
         # "planet" defined by an array: [Teff, logg, [Fe/H], Rp/R*, P]
-        self.planet2i = {self.PAD: 0} #will contain each "planet" in the training set, uniquely
+        self.planet2i = {self.PAD: np.zeros(5)} #will contain each "planet" in the training set, uniquely
         self.i2planet = [self.PAD]
 
         self.planet_counter = []
@@ -67,7 +65,12 @@ class Data(object):
                    self.systems[i][max(0, j - width):j]
             right = [0 for _ in range((j + width) - len(self.systems[i]) + 1)] + \
                     self.systems[i][j + 1: min(len(self.systems[i]), j + width) + 1]
-            # below for POS tagging example, but analogous for planets:
+
+            left = [self.i2planet[k] for k in left]
+            right = [self.i2planet[h] for h in right]
+
+            # below for POS tagging example, but analogous for planets, except that each "planet" 
+            #   is an array of data rather than an index to a word:
             # if e.g. i==0, j==2, width=2 (referring to sentence "the dog chased the cat", word "chased"): 
             #    left = [2,3] (signifying "the dog"); right = [2,5] (signifying "the cat")
             # if e.g. i==0, j==0, width=2 (referring to sentence "the dog chased the cat", word "the" (first time)):
