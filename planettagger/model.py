@@ -16,9 +16,6 @@ class MMIModel(nn.Module):
 
         self.loss = Loss()
 
-        self.past = PastEncoder(width, num_labels)
-        self.future = FutureEncoder(num_labels)
-
     def forward(self, past_planets, future_planets, is_training=True):
         if is_training:
             loss = self.loss(past_planets, future_planets)
