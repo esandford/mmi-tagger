@@ -17,7 +17,7 @@ def main(args):
     device = torch.device('cuda' if args.cuda else 'cpu')
     data = Data(args.data)
 
-    model = MMIModel(args.num_labels, args.width).to(device)
+    model = MMIModel(args.num_planet_features, args.num_labels, args.width).to(device)
     logger = Logger(args.model + '.log', args.train)
     logger.log('python ' + ' '.join(sys.argv) + '\n')
     logger.log('Random seed: %d' % args.seed)
@@ -54,6 +54,8 @@ if __name__ == '__main__':
                         help='data path (X.words, assumes X.tags exists)')
     parser.add_argument('--num_labels', type=int, default=45, metavar='m',
                         help='number of labels to induce [%(default)d]')
+    parser.add_argument('--num_planet_features', type=int, default=5, metavar='m',
+                        help='number of features known about each planet [%(default)d]')
     parser.add_argument('--train', action='store_true',
                         help='train?')
     parser.add_argument('--batch_size', type=int, default=80, metavar='B',

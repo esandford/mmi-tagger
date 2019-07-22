@@ -5,22 +5,25 @@ import torch.nn.functional as F
 
 class MMIModel(nn.Module):
 
-    def __init__(self, num_labels, width):
+    def __init__(self, num_planet_features, num_labels, width):
         super(MMIModel, self).__init__()
+        self.num_planet_features = num_planet_features
         self.num_labels = num_labels
         self.width = width
         self.loss = Loss()
 
-        self.planetContext = ContextHandler(width, num_labels)
-        self.indivPlanet = PlanetHandler(num_labels)
+        self.planetContext = ContextHandler(width, num_planet_features, num_labels)
+        self.indivPlanet = PlanetHandler(num_planet_features, num_labels)
 
-    def forward(self, past_planets, future_planets, is_training=True):
+    def forward(self, planetContexts, indivPlanets, is_training=True):
+        context_rep = self.planetContext(planetContexts)
+        planet_rep = self.indivPlanet(indivPlanets)
         if is_training:
-            loss = self.loss(past_planets, future_planets)
+            loss = self.loss(context_rep, planet_rep)
             return loss
 
         else:
-            future_probs, future_indices = future_planets.max(1)
+            future_probs, future_indices = planet_rep.max(1)
             return future_probs, future_indices
 
 
@@ -30,12 +33,12 @@ class Loss(nn.Module):
         super(Loss, self).__init__()
         self.entropy = Entropy()
 
-    def forward(self, past_planets, future_planets):
-        pZ_Y = F.softmax(future_planets, dim=1)
+    def forward(self, planetContexts, indivPlanets):
+        pZ_Y = F.softmax(indivPlanets, dim=1)
         pZ = pZ_Y.mean(0)
         hZ = self.entropy(pZ)
 
-        x = pZ_Y * F.log_softmax(past_planets, dim=1)  # B x m
+        x = pZ_Y * F.log_softmax(planetContexts, dim=1)  # B x m
         hZ_X_ub = -1.0 * x.sum(dim=1).mean()
 
         loss = hZ_X_ub - hZ
@@ -54,35 +57,28 @@ class Entropy(nn.Module):
 
 class ContextHandler(nn.Module):
 
-    def __init__(self, width, num_labels):
+    def __init__(self, width, num_planet_features, num_labels):
         super(ContextHandler, self).__init__()
-        self.linear = nn.Linear(2 * width, num_labels) #(in_features, out_features) = (numContextWords, numLabels)
+        self.linear = nn.Linear(2 * width * num_planet_features, num_labels) #(in_features, out_features) 
+                                                                             # = (2width x numPlanetFeatures, numLabels)
+                                                                             # = e.g. (4x5, numLabels)
+                                                                             # = (20, numLabels)
 
     def forward(self, contextPlanets):
-        #contextPlanets will be of the shape: Batchsize x 2width x numPlanetFeatures
-        rep = self.linear(contextPlanets.view(contextPlanets.shape[0], -1))  # self.linear(Batchsize x 2width x numPlanetFeatures)
-                                                                             # returns Batchsize x numLabels
+        #contextPlanets will be of the shape: Batchsize x 2width x numPlanetFeatures, e.g. shape (15, 4, 5)
+        # self.linear wants to operate on something of shape (Batchsize, 2width*numPlanetFeatuers), e.g. (15, 20)
+        rep = self.linear(contextPlanets.view(contextPlanets.shape[0], -1))  # returns Batchsize x numLabels
         return rep
 
 
 class PlanetHandler(nn.Module):
 
-    def __init__(self, wemb, cemb, num_layers, num_labels):
+    def __init__(self, num_planet_features, num_labels):
         super(PlanetHandler, self).__init__()
-        self.linear = nn.Linear(wemb.embedding_dim + 2 * cemb.embedding_dim,
-                                num_labels)
+        self.linear = nn.Linear(num_planet_features,num_labels) # e.g. (5, numLabels)
 
-    def forward(self, words, padded_chars, char_lengths):
-        B = len(char_lengths)
-        wembs = self.wemb(words)  # B x d_w
-
-        packed = pack_padded_sequence(self.cemb(padded_chars), char_lengths)
-        output, (final_h, final_c) = self.lstm(packed)
-
-        final_h = final_h.view(self.lstm.num_layers, 2, B,
-                               self.lstm.hidden_size)[-1]         # 2 x B x d_c
-        cembs = final_h.transpose(0, 1).contiguous().view(B, -1)  # B x 2d_c
-
-        rep = self.linear(torch.cat([wembs, cembs], 1))  # B x m
+    def forward(self, planets):
+        #self.linear wants to operate on something of shape (Batchsize, num_planet_features)
+        rep = self.linear(planets.view(planets.shape[0],-1))  # B x num_planet_features
         return rep
 
