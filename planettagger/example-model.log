@@ -1,0 +1,28 @@
+python main.py example-model planet-mmi-trainingset.txt --train --epochs 10 --num_labels 3
+
+Random seed: 42
+-----------------------------------------------------------------------------------------
+[DATA]
+   data:          planet-mmi-trainingset.txt
+   # planets:     3514
+-----------------------------------------------------------------------------------------
+[TRAINING]
+   num_labels:    3
+   batch_size:    80
+   lr:            0.002
+   epochs:        10
+
+| epoch   1 | loss    nan |    nan bits | time 0:00:00   
+| epoch   2 | loss    nan |    nan bits | time 0:00:00   
+| epoch   3 | loss    nan |    nan bits | time 0:00:00   
+| epoch   4 | loss    nan |    nan bits | time 0:00:00   
+| epoch   5 | loss    nan |    nan bits | time 0:00:00   
+| epoch   6 | loss    nan |    nan bits | time 0:00:00   
+| epoch   7 | loss    nan |    nan bits | time 0:00:00   
+| epoch   8 | loss    nan |    nan bits | time 0:00:00   
+| epoch   9 | loss    nan |    nan bits | time 0:00:00   
+| epoch  10 | loss    nan |    nan bits | time 0:00:00   
+
+Training time 0:00:00   
+=========================================================================================
+=========================================================================================
