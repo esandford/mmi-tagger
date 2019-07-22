@@ -11,7 +11,14 @@ class MMIModel(nn.Module):
 
     def __init__(self, num_word_types, num_char_types, num_labels, word_dim,
                  char_dim, width, num_lstm_layers):
-        super(MMIModel, self).__init__()
+        super(MMIModel, self).__init__() #initializes a nn.Module, which is the parent class of MMIModel, so we can use all the associated methods
+        #print("num_word_types is {0}".format(num_word_types))      #7
+        #print("num_char_types is {0}".format(num_char_types))      #12
+        #print("num_labels is {0}".format(num_labels))              #3
+        #print("word_dim is {0}".format(word_dim))                  #200
+        #print("char_dim is {0}".format(char_dim))                  #100
+        #print("width is {0}".format(width))                        #2
+        #print("num_lstm_layers is {0}".format(num_lstm_layers))    #1
         self.wemb = nn.Embedding(num_word_types, word_dim, padding_idx=0)
         self.cemb = nn.Embedding(num_char_types, char_dim, padding_idx=0)
         self.num_labels = num_labels

@@ -10,7 +10,7 @@ from torch.nn.utils.rnn import pad_sequence
 class Data(object):
 
     def __init__(self, data_path):
-        self.data_path = data_path
+        self.data_path = data_path #example.words
         self.PAD = '<pad>'
         self.UNK = '<unk>'
 

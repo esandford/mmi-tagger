@@ -12,34 +12,56 @@ class Data(object):
     def __init__(self, data_path):
         self.data_path = data_path
         self.PAD = '<pad>'
-        self.UNK = '<unk>'
+        self.systems = []       # Index sequences---have to decide---will each planet be unique, 
+                                # or will I group "similar" planets? 
+                                # And will that set the number of "clusters"?
 
-        self.sents = []   # Index sequences    # [[2, 3, 4, 2, 5], [2, 5, 4, 2, 6], [2, 6, 4, 2, 3]]
-        self.golds = []                        # [['D', 'N', 'V', 'D', 'N'], ['D', 'N', 'V', 'D', 'N'], ['D', 'N', 'V', 'D', 'N']]
-        self.w2i = {self.PAD: 0, self.UNK: 1}  # {'chased': 4, 'dog': 3, 'cat': 5, '<pad>': 0, 'the': 2, 'rat': 6, '<unk>': 1}
-        self.i2w = [self.PAD, self.UNK]        # ['<pad>', '<unk>', 'the', 'dog', 'chased', 'cat', 'rat']
-        self.c2i = {self.PAD: 0, self.UNK: 1}  # {'a': 9, 'c': 8, 'e': 4, 'd': 5, 'g': 7, 'h': 3, 's': 10, 'o': 6, '<pad>': 0, 'r': 11, 't': 2, '<unk>': 1}
-        self.i2c = [self.PAD, self.UNK]        # ['<pad>', '<unk>', 't', 'h', 'e', 'd', 'o', 'g', 'c', 'a', 's', 'r']
-        self.word_counter = []
-        self.char_counter = []
+        # Also, what defines a "planet"? It's not a string of characters, it's a list
+        # of numbers---period, rp/r* to start. 
+        # And for a star, those numbers are different--Teff, logg, [Fe/H]
+        self.planet2i = {self.PAD: 0}
+        self.i2planet = [self.PAD]
+
+        self.planet_counter = []
         self.label_counter = Counter()
 
         self.get_data()
 
+        #self.UNK = '<unk>'
+        #self.sents = []   # Index sequences    # [[2, 3, 4, 2, 5], [2, 5, 4, 2, 6], [2, 6, 4, 2, 3]]
+        #self.golds = []                        # [['D', 'N', 'V', 'D', 'N'], ['D', 'N', 'V', 'D', 'N'], ['D', 'N', 'V', 'D', 'N']]
+        #self.w2i = {self.PAD: 0, self.UNK: 1}  # {'chased': 4, 'dog': 3, 'cat': 5, '<pad>': 0, 'the': 2, 'rat': 6, '<unk>': 1}
+        #self.i2w = [self.PAD, self.UNK]        # ['<pad>', '<unk>', 'the', 'dog', 'chased', 'cat', 'rat']
+        #self.c2i = {self.PAD: 0, self.UNK: 1}  # {'a': 9, 'c': 8, 'e': 4, 'd': 5, 'g': 7, 'h': 3, 's': 10, 'o': 6, '<pad>': 0, 'r': 11, 't': 2, '<unk>': 1}
+        #self.i2c = [self.PAD, self.UNK]        # ['<pad>', '<unk>', 't', 'h', 'e', 'd', 'o', 'g', 'c', 'a', 's', 'r']
+        #self.word_counter = []
+        #self.char_counter = []
+        #self.label_counter = Counter()
+
+        #self.get_data()
+
     def get_data(self):
-        wcount = Counter()
-        ccount = Counter()
-        def add(w):
-            wcount[w] += 1
-            if w not in self.w2i:
-                self.i2w.append(w)
-                self.w2i[w] = len(self.i2w) - 1
-            for c in w:
-                ccount[c] += 1
-                if c not in self.c2i:
-                    self.i2c.append(c)
-                    self.c2i[c] = len(self.i2c) - 1
-            return self.w2i[w]
+        planetcount = Counter()
+        #wcount = Counter()
+        #ccount = Counter()
+        def add(p):
+            planetcount[p] += 1
+            if p not in self.planet2i:
+                self.i2planet.append(p)
+                self.planet2i[p] = len(self.i2planet) - 1
+            return self.planet2i[p]
+
+        #def add(w):
+        #    wcount[w] += 1
+        #    if w not in self.w2i:
+        #        self.i2w.append(w)
+        #        self.w2i[w] = len(self.i2w) - 1
+        #    for c in w:
+        #        ccount[c] += 1
+        #        if c not in self.c2i:
+        #            self.i2c.append(c)
+        #            self.c2i[c] = len(self.i2c) - 1
+        #    return self.w2i[w]
 
         with open(self.data_path, 'r') as data_file:
             for line in data_file:
