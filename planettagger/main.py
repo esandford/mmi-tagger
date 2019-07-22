@@ -24,25 +24,12 @@ def main(args):
     control = Control(model, args.model, args.batch_size, device, logger)
 
     if args.train:
-        acc, vm, zseqs, clustering = control.train(data, args.lr, args.epochs)
+        control.train(data, args.lr, args.epochs)
 
     elif os.path.exists(args.model):
         control.load_model()
-        acc, vm, zseqs, clustering = control.evaluate(data)
-        print('     acc: {:5.2f}'.format(acc))
-        print('      vm: {:5.2f}'.format(vm))
-
-    if args.pred:
-        with open(args.pred, 'w') as f:
-            for zseq in zseqs:
-                f.write(' '.join([str(z) for z in zseq]) + '\n')
-
-    if args.clusters:
-        with open(args.clusters, 'w') as f:
-            for z, cluster in enumerate(clustering):
-                f.write(str(z) + '\t' + ' '.join([data.i2w[i] for i in
-                                                  cluster]) + '\n')
-
+        control.evaluate(data)
+       
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -68,10 +55,6 @@ if __name__ == '__main__':
                         help='context width (to each side) [%(default)d]')
     parser.add_argument('--epochs', type=int, default=10,
                         help='max number of epochs [%(default)d]')
-    parser.add_argument('--pred', type=str, default='',
-                        help='prediction path')
-    parser.add_argument('--clusters', type=str, default='',
-                        help='cluster path')
     parser.add_argument('--seed', type=int, default=42,
                         help='random seed [%(default)d]')
     parser.add_argument('--cuda', action='store_true',

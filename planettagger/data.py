@@ -14,33 +14,28 @@ class Data(object):
         self.systems = []   # will represent each training set planetary system as a list of indices
                             # e.g. [1,2,3,4,5],[6,7],[8,9] (each planet is unique, so we don't expect repeats)
         
-        # "planet" defined by an array: [Teff, logg, [Fe/H], Rp/R*, P]
+        # "planet" defined by a list: [Teff, logg, [Fe/H], Rp/R*, P]
         self.planet2i = {self.PAD: np.zeros(5)} #will contain each "planet" in the training set, uniquely
         self.i2planet = [self.PAD]
 
-        self.planet_counter = []
         self.label_counter = Counter()
 
         self.get_data()
 
     def get_data(self):
-        planetcount = Counter()
         #wcount = Counter()
         #ccount = Counter()
         def add(p):
-            # "p" is an array: [Teff, logg, [Fe/H], Rp/R*, P]
-            planetcount[p] += 1
-            if p not in self.planet2i:
+            # "p" is a list: [Teff, logg, [Fe/H], Rp/R*, P]
+            if tuple(p) not in self.planet2i:
                 self.i2planet.append(p)
-                self.planet2i[p] = len(self.i2planet) - 1
-            return self.planet2i[p]
+                self.planet2i[tuple(p)] = len(self.i2planet) - 1
+            return self.planet2i[tuple(p)]
         
         with open(self.data_path, "rb") as picklefile:
             trainingDat = pickle.load(picklefile)
             for sys in trainingDat:
                 self.systems.append([add(planet) for planet in sys])
-
-        self.planet_counter = [planetcount[self.i2planet[i]] for i in range(len(self.i2planet))]
 
     def get_batches(self, batch_size):
         pairs = []
