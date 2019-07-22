@@ -1,6 +1,5 @@
 from __future__ import division, print_function
 import argparse
-import codecs
 import random
 import os
 import sys
@@ -17,8 +16,8 @@ def main(args):
     torch.manual_seed(args.seed)
     device = torch.device('cuda' if args.cuda else 'cpu')
     data = Data(args.data)
-    model = MMIModel(len(data.w2i), len(data.c2i), args.num_labels, args.dim,
-                     args.dim // 2, args.width, 1).to(device)
+
+    model = MMIModel(args.num_labels, args.width).to(device)
     logger = Logger(args.model + '.log', args.train)
     logger.log('python ' + ' '.join(sys.argv) + '\n')
     logger.log('Random seed: %d' % args.seed)
