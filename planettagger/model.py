@@ -53,10 +53,12 @@ class Entropy(nn.Module):
         super(Entropy, self).__init__()
 
     def forward(self, probs):
-        #x = probs * torch.log(probs)
-        #entropy = -1.0 * x.sum()
-        #return entropy
-        return 1
+        """
+        H(x) = -sum (p(x) * ln(p(x)))
+        """
+        x = probs * torch.log(probs)
+        entropy = -1.0 * x.sum()
+        return entropy
 
 class ContextRep(nn.Module):
 
@@ -75,7 +77,8 @@ class ContextRep(nn.Module):
         rep = self.linear(contextPlanetData.view(contextPlanetData.shape[0], -1))  # returns Batchsize x numLabels
         #print(rep.shape)
         #print(type(rep))
-        #print(rep)
+        print("ContextRep:")
+        print(rep)
         return rep
 
 
@@ -97,6 +100,7 @@ class PlanetRep(nn.Module):
         rep = self.linear(indivPlanetData) #shape Batchsize x num_labels
         #print(type(rep)) #Torch tensor full of nans---but only full of nans because something is bad about the loss or entropy functions.
         #print(rep.shape)
-        #print(rep)
+        print("PlanetRep:")
+        print(rep)
         return rep
 
