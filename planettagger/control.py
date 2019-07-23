@@ -33,6 +33,8 @@ class Control(nn.Module):
         try:
             for epoch in range(1, epochs + 1):
                 avg_loss, epoch_time = self.do_epoch(data, optimizer)
+                #print("avg_loss is {0}".format(avg_loss))
+                #print("epoch_time is {0}".format(epoch_time))
                 bits = (- avg_loss) * math.log(math.e,2)
                 self.logger.log('| epoch {:3d} | loss {:6.2f} | {:6.2f} bits | '
                                 'time {:10s}'.format(
@@ -56,13 +58,19 @@ class Control(nn.Module):
 
     def do_epoch(self, data, optimizer):
         self.model.train()
+        print(self.model)
         avg_loss = 0
         epoch_start_time = time.time()
         batches = data.get_batches(self.batch_size)
+        #print(batches)
+        #print(type(batches)) #list, each element of which is 1 batch 
         for batch in batches:
             self.model.zero_grad()
             X, Y1 = data.tensorize_batch(batch, self.device, self.model.width)
+            #print("X shape is {0}".format(X.shape))    # Batchsize x 2width x numPlanetFeatures
+            #print("Y1 shape is {0}".format(Y1.shape))  # Batchsize x numPlanetFeatures
             loss = self.model(X, Y1, is_training=True) # runs MMIModel.forward(X, Y1, is_training=True)
+            print("loss is {0}".format(loss))
             avg_loss += loss.item() / len(batches)
             loss.backward()
             optimizer.step()

@@ -41,7 +41,9 @@ class Data(object):
     def get_batches(self, batch_size):
         pairs = []
         # i = index specifying system = 0, 1, 2, ..., 2656
-        # j = index specifying planet in system = 0, 1, 2, ..., 3513 (except amend these numbers to exclude single-planet systems)
+        # j = index specifying planet in system = 0, 1, 2, 3, 4, 5 (up to 6-planet systems)
+        #print(len(self.systems)) #2657
+        #print(self.systems)      #[[1],[2],[3],[4],[5,6],[7,8],...,[3512,3513],[3514]]
         for i in range(len(self.systems)):
             pairs.extend([(i, j) for j in range(len(self.systems[i]))]) # pairs = [(0,0),(0,1),...,(0,3513),...,(2656,0),...,(2656,3513)]
         random.shuffle(pairs)
