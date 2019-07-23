@@ -58,7 +58,7 @@ class Control(nn.Module):
 
     def do_epoch(self, data, optimizer):
         self.model.train()
-        print(self.model)
+        #print(self.model)
         avg_loss = 0
         epoch_start_time = time.time()
         batches = data.get_batches(self.batch_size)
@@ -70,7 +70,7 @@ class Control(nn.Module):
             #print("X shape is {0}".format(X.shape))    # Batchsize x 2width x numPlanetFeatures
             #print("Y1 shape is {0}".format(Y1.shape))  # Batchsize x numPlanetFeatures
             loss = self.model(X, Y1, is_training=True) # runs MMIModel.forward(X, Y1, is_training=True)
-            print("loss is {0}".format(loss))
+            #print("loss is {0}".format(loss))
             avg_loss += loss.item() / len(batches)
             loss.backward()
             optimizer.step()

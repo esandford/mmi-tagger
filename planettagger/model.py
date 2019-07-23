@@ -35,17 +35,27 @@ class Loss(nn.Module):
         super(Loss, self).__init__()
         self.entropy = Entropy()
 
-    def forward(self, planetContextRep, indivPlanetRep):
-        #pZ_Y = F.softmax(indivPlanetRep, dim=1)
-        #pZ = pZ_Y.mean(0)
-        #hZ = self.entropy(pZ)
+    def forward(self, planetContextRep, indivPlanetRep, softmax_scale=0.005):
+        #print("indivPlanetRep shape is {0}".format(indivPlanetRep.shape))      # Batchsize x num_labels
+        #print("planetContextRep shape is {0}".format(planetContextRep.shape))  # Batchsize x num_labels
+        #print("softmax_scale is {0}".format(softmax_scale))
+        pZ_Y = F.softmax(softmax_scale*indivPlanetRep, dim=1)
+        #print(pZ_Y.shape)
+        #print(type(pZ_Y))
+        #print(pZ_Y)
+        pZ = pZ_Y.mean(0)
+        #print("pZ is {0}".format(pZ))
+        hZ = self.entropy(pZ)
+        #print("hZ is {0}".format(hZ))
 
-        #x = pZ_Y * F.log_softmax(planetContextRep, dim=1)  # B x m
-        #hZ_X_ub = -1.0 * x.sum(dim=1).mean()
+        x = pZ_Y * F.log_softmax(softmax_scale*planetContextRep, dim=1)  # B x m
+        #print("x is {0}".format(x))
+        hZ_X_ub = -1.0 * x.sum(dim=1).mean()
+        #print("hZ_X_ub is {0}".format(hZ_X_ub))
 
-        #loss = hZ_X_ub - hZ
-        #return loss
-        return 1
+        loss = hZ_X_ub - hZ
+        #print("loss is {0}".format(loss))
+        return loss
 
 class Entropy(nn.Module):
 
@@ -77,8 +87,8 @@ class ContextRep(nn.Module):
         rep = self.linear(contextPlanetData.view(contextPlanetData.shape[0], -1))  # returns Batchsize x numLabels
         #print(rep.shape)
         #print(type(rep))
-        print("ContextRep:")
-        print(rep)
+        #rint("ContextRep:")
+        #print(rep)
         return rep
 
 
@@ -100,7 +110,7 @@ class PlanetRep(nn.Module):
         rep = self.linear(indivPlanetData) #shape Batchsize x num_labels
         #print(type(rep)) #Torch tensor full of nans---but only full of nans because something is bad about the loss or entropy functions.
         #print(rep.shape)
-        print("PlanetRep:")
-        print(rep)
+        #print("PlanetRep:")
+        #print(rep)
         return rep
 
