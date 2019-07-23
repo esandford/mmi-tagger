@@ -73,6 +73,9 @@ class ContextRep(nn.Module):
         #contextPlanets will be of the shape: Batchsize x 2width x numPlanetFeatures, e.g. shape (15, 4, 5)
         # self.linear wants to operate on something of shape (Batchsize, 2width*numPlanetFeatuers), e.g. (15, 20)
         rep = self.linear(contextPlanetData.view(contextPlanetData.shape[0], -1))  # returns Batchsize x numLabels
+        #print(rep.shape)
+        #print(type(rep))
+        #print(rep)
         return rep
 
 
