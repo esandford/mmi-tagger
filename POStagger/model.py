@@ -78,11 +78,16 @@ class PastEncoder(nn.Module):
     def __init__(self, wemb, width, num_labels):
         super(PastEncoder, self).__init__()
         self.wemb = wemb
-        self.linear = nn.Linear(2 * width * wemb.embedding_dim, num_labels)
+        self.linear = nn.Linear(2 * width * wemb.embedding_dim, num_labels) # 800 x 3 = (2width x d_w) x num_labels
 
     def forward(self, words):
-        wembs = self.wemb(words)  # B x 2width x d_w
-        rep = self.linear(wembs.view(words.shape[0], -1))  # B x m
+        wembs = self.wemb(words)                           # B x 2width x d_w
+        #print(words.shape)                                # 15 x 4 = B x 2width
+        #print(wembs.shape)                                # 15 x 4 x 200 = B x 2width x d_w
+        #print(words.shape[0])                             # 15
+        #print(wembs.view(words.shape[0], -1).shape)       # 15 x 800 = B x (2width x d_w)
+        rep = self.linear(wembs.view(words.shape[0], -1))  # 15 x 3 = B x num_labels
+        #print(rep.shape)
         return rep
 
 
