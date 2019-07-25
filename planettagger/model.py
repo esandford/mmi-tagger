@@ -25,8 +25,8 @@ class MMIModel(nn.Module):
             return loss
 
         else:
-            future_probs, future_indices = planet_rep.max(1)
-            return future_probs, future_indices
+            future_max_probs, future_indices = planet_rep.max(1)
+            return planet_rep, future_max_probs, future_indices
 
 
 class Loss(nn.Module):

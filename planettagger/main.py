@@ -28,7 +28,7 @@ def main(args):
 
     elif os.path.exists(args.model):
         control.load_model()
-        control.evaluate(data)
+        control.classify(args.data, data)
        
 
 if __name__ == '__main__':
@@ -45,13 +45,13 @@ if __name__ == '__main__':
                         help='number of features known about each planet [%(default)d]')
     parser.add_argument('--train', action='store_true',
                         help='train?')
-    parser.add_argument('--batch_size', type=int, default=80, metavar='B',
+    parser.add_argument('--batch_size', type=int, default=10, metavar='B',
                         help='batch size [%(default)d]')
     parser.add_argument('--dim', type=int, default=200,
                         help='dimension of word embeddings [%(default)d]')
     parser.add_argument('--lr', type=float, default=0.002,
                         help='initial learning rate [%(default)g]')
-    parser.add_argument('--width', type=int, default=2,
+    parser.add_argument('--width', type=int, default=1,
                         help='context width (to each side) [%(default)d]')
     parser.add_argument('--epochs', type=int, default=10,
                         help='max number of epochs [%(default)d]')

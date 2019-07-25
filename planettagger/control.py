@@ -5,6 +5,7 @@ import random
 import time
 import torch
 import torch.nn as nn
+import numpy as np
 
 from datetime import timedelta
 
@@ -36,7 +37,7 @@ class Control(nn.Module):
                 #print("avg_loss is {0}".format(avg_loss))
                 #print("epoch_time is {0}".format(epoch_time))
                 bits = (- avg_loss) * math.log(math.e,2)
-                self.logger.log('| epoch {:3d} | loss {:6.2f} | {:6.2f} bits | '
+                self.logger.log('| epoch {:3d} | loss {:6.12f} | {:6.12f} bits | '
                                 'time {:10s}'.format(
                                     epoch, avg_loss, bits,
                                     str(timedelta(seconds=int(epoch_time)))))
@@ -78,6 +79,24 @@ class Control(nn.Module):
         epoch_time = time.time() - epoch_start_time
         
         return avg_loss, epoch_time
+
+    def classify(self, data_path, data):
+        self.model.eval()
+        batches = data.get_batches(self.batch_size)
+        zseqs = [[False for w in sys] for sys in data.systems]
+        clustering = [{} for z in range(self.model.num_labels)]
+        with torch.no_grad():
+            for batch in batches:
+                X, Y1 = data.tensorize_batch(batch, self.device,self.model.width)
+                future_probs, future_max_probs, future_indices = self.model(X, Y1, is_training=False)
+                for k, (i, j) in enumerate(batch):
+                    z = future_indices[k].max()
+                    zseqs[i][j] = z
+                    clustering[z][data.systems[i][j]] = True
+
+        np.save("./{0}_classprobs.npy".format(data_path[:-4]),future_probs.numpy())
+        return future_probs, zseqs, clustering
+
 
     def load_model(self):
         with open(self.model_path, 'rb') as f:
