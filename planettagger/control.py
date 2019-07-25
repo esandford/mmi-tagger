@@ -85,16 +85,20 @@ class Control(nn.Module):
         batches = data.get_batches(self.batch_size)
         zseqs = [[False for w in sys] for sys in data.systems]
         clustering = [{} for z in range(self.model.num_labels)]
+
+        all_future_probs = np.zeros((1,self.model.num_labels))
         with torch.no_grad():
             for batch in batches:
                 X, Y1 = data.tensorize_batch(batch, self.device,self.model.width)
                 future_probs, future_max_probs, future_indices = self.model(X, Y1, is_training=False)
+                all_future_probs = np.vstack((all_future_probs,future_probs.numpy()))
                 for k, (i, j) in enumerate(batch):
                     z = future_indices[k].max()
                     zseqs[i][j] = z
                     clustering[z][data.systems[i][j]] = True
 
-        np.save("./{0}_classprobs.npy".format(data_path[:-4]),future_probs.numpy())
+        all_future_probs = all_future_probs[1:]
+        np.save("./{0}_classprobs.npy".format(data_path[:-4]),all_future_probs)
         return future_probs, zseqs, clustering
 
 

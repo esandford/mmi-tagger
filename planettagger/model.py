@@ -17,7 +17,7 @@ class MMIModel(nn.Module):
         self.planetContext = ContextRep(width, num_planet_features, num_labels)
         self.indivPlanet = PlanetRep(num_planet_features, num_labels)
 
-    def forward(self, planetContextData, indivPlanetData, is_training=True):
+    def forward(self, planetContextData, indivPlanetData, is_training=True, softmax_scale=0.005):
         context_rep = self.planetContext(planetContextData)
         planet_rep = self.indivPlanet(indivPlanetData)
         if is_training:
@@ -26,7 +26,7 @@ class MMIModel(nn.Module):
 
         else:
             future_max_probs, future_indices = planet_rep.max(1)
-            return planet_rep, future_max_probs, future_indices
+            return F.softmax(softmax_scale*planet_rep, dim=1), future_max_probs, future_indices
 
 
 class Loss(nn.Module):
