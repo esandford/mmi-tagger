@@ -29,6 +29,7 @@ def main(args):
 
     elif os.path.exists(args.model):
         control.load_model()
+        control.classify(args.data, data)
         acc, vm, zseqs, clustering = control.evaluate(data)
         print('     acc: {:5.2f}'.format(acc))
         print('      vm: {:5.2f}'.format(vm))

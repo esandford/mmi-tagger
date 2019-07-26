@@ -104,6 +104,8 @@ class Data(object):
 
         X = torch.LongTensor(contexts).to(device)  # B x 2width, where B = batch size = 15 for basic example
         Y1 = torch.LongTensor(targets).to(device)  # B
+        print(Y1)
+        print(Y1.shape)
         Y2 = pad_sequence(seqs, padding_value=0).to(device)  # T x B, where T = maximum number of characters in any word in Y = 6 in basic example (for "chased")
         lengths = torch.LongTensor([seq.shape[0] for seq in seqs]).to(device) #B, number of characters in each word in batch
         return X, Y1, Y2, lengths

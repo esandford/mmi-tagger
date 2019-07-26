@@ -40,8 +40,12 @@ class MMIModel(nn.Module):
             return loss
 
         else:
-            future_probs, future_indices = future_rep.max(1)
-            return future_probs, future_indices
+            #future_probs, future_indices = future_rep.max(1)
+            #return future_probs, future_indices
+
+            future_max_probs, future_indices = future_rep.max(1)
+            return F.softmax(future_rep, dim=1), future_max_probs, future_indices
+
 
 
 class Loss(nn.Module):
@@ -51,7 +55,12 @@ class Loss(nn.Module):
         self.entropy = Entropy()
 
     def forward(self, past_rep, future_rep):
+        #print(future_rep.shape)
+        #print(future_rep)
         pZ_Y = F.softmax(future_rep, dim=1)
+        #print(pZ_Y.shape)
+        #print(type(pZ_Y))
+        #print(pZ_Y)
         pZ = pZ_Y.mean(0)
         hZ = self.entropy(pZ)
 
@@ -92,7 +101,7 @@ class PastEncoder(nn.Module):
         #print(wembs.view(words.shape[0], -1).shape)       # 15 x 800 = B x (2width x d_w)
         rep = self.linear(wembs.view(words.shape[0], -1))  # 15 x 3 = B x num_labels
         #print(rep)
-        print("PastEncoder shape is {0}".format(rep.shape))
+        #print("PastEncoder shape is {0}".format(rep.shape))
         return rep
 
 
@@ -119,5 +128,5 @@ class FutureEncoder(nn.Module):
         cembs = final_h.transpose(0, 1).contiguous().view(B, -1)  # B x 2d_c
 
         rep = self.linear(torch.cat([wembs, cembs], 1))  # B x m
-        print("FutureEncoder shape is {0}".format(rep.shape))
+        #print("FutureEncoder shape is {0}".format(rep.shape))
         return rep

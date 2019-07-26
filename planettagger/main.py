@@ -24,7 +24,7 @@ def main(args):
     control = Control(model, args.model, args.batch_size, device, logger)
 
     if args.train:
-        control.train(data, args.lr, args.epochs)
+        control.train(data, args.data, args.lr, args.epochs)
 
     elif os.path.exists(args.model):
         control.load_model()

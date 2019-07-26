@@ -17,7 +17,7 @@ class MMIModel(nn.Module):
         self.planetContext = ContextRep(width, num_planet_features, num_labels)
         self.indivPlanet = PlanetRep(num_planet_features, num_labels)
 
-    def forward(self, planetContextData, indivPlanetData, is_training=True, softmax_scale=0.005):
+    def forward(self, planetContextData, indivPlanetData, is_training=True, softmax_scale=0.0005):
         context_rep = self.planetContext(planetContextData)
         planet_rep = self.indivPlanet(indivPlanetData)
         if is_training:
@@ -35,7 +35,7 @@ class Loss(nn.Module):
         super(Loss, self).__init__()
         self.entropy = Entropy()
 
-    def forward(self, planetContextRep, indivPlanetRep, softmax_scale=0.005):
+    def forward(self, planetContextRep, indivPlanetRep, softmax_scale=0.0005):
         #print("indivPlanetRep shape is {0}".format(indivPlanetRep.shape))      # Batchsize x num_labels
         #print("planetContextRep shape is {0}".format(planetContextRep.shape))  # Batchsize x num_labels
         #print("softmax_scale is {0}".format(softmax_scale))
@@ -76,15 +76,20 @@ class ContextRep(nn.Module):
         # In the __init__() step, define what each layer is. In the forward() step,
         # define how the layers are connected.
         super(ContextRep, self).__init__()
-        self.linear = nn.Linear(2 * width * num_planet_features, num_labels) #(in_features, out_features) 
+        #self.linear = nn.Linear(2 * width * num_planet_features, num_labels) #(in_features, out_features) 
                                                                              # = (2width x numPlanetFeatures, numLabels)
                                                                              # = e.g. (4x5, numLabels)
                                                                              # = (20, numLabels)
+        self.linear1 = nn.Linear(2 * width * num_planet_features, 20)
+        self.linear2 = nn.Linear(20, 10)
+        self.linear3 = nn.Linear(10, num_labels)
 
     def forward(self, contextPlanetData):
         #contextPlanets will be of the shape: Batchsize x 2width x numPlanetFeatures, e.g. shape (15, 4, 5)
-        # self.linear wants to operate on something of shape (Batchsize, 2width*numPlanetFeatuers), e.g. (15, 20)
-        rep = self.linear(contextPlanetData.view(contextPlanetData.shape[0], -1))  # returns Batchsize x numLabels
+        # self.linear1 wants to operate on something of shape (Batchsize, 2width*numPlanetFeatuers), e.g. (15, 20)
+        rep = self.linear1(contextPlanetData.view(contextPlanetData.shape[0], -1))  # returns Batchsize x numLabels
+        rep = self.linear2(rep)
+        rep = self.linear3(rep)
         #print(rep.shape)
         #print(type(rep))
         #rint("ContextRep:")
@@ -98,7 +103,10 @@ class PlanetRep(nn.Module):
         # In the __init__() step, define what each layer is. In the forward() step,
         # define how the layers are connected.
         super(PlanetRep, self).__init__()
-        self.linear = nn.Linear(num_planet_features,num_labels) # e.g. (5, numLabels)
+        #self.linear = nn.Linear(num_planet_features,num_labels) # e.g. (5, numLabels)
+        self.linear1 = nn.Linear(num_planet_features,20)
+        self.linear2 = nn.Linear(20,10)
+        self.linear3 = nn.Linear(10,num_labels)
 
     def forward(self, indivPlanetData):
         #self.linear wants to operate on something of shape (Batchsize, num_planet_features)
@@ -107,7 +115,9 @@ class PlanetRep(nn.Module):
         #print(indivPlanetData.shape) # Batchsize x numPlanetFeatures
         #print(indivPlanetData.view(indivPlanetData.shape[0],-1).shape) #also Batchsize x numPlanetFeatures. in fact same as indivPlanetData
         #rep = self.linear(indivPlanetData.view(indivPlanetData.shape[0],-1))  # B x num_labels
-        rep = self.linear(indivPlanetData) #shape Batchsize x num_labels
+        rep = self.linear1(indivPlanetData) #shape Batchsize x num_labels
+        rep = self.linear2(rep)
+        rep = self.linear3(rep)
         #print(type(rep)) #Torch tensor full of nans---but only full of nans because something is bad about the loss or entropy functions.
         #print(rep.shape)
         #print("PlanetRep:")

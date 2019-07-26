@@ -1,28 +1,118 @@
-python main.py example-model planet-mmi-trainingset.txt --train --epochs 10 --num_labels 3
+python main.py example-model planet-mmi-trainingset.txt --train --epochs 100 --batch_size 5 --num_labels 2 --seed 1
 
-Random seed: 42
+Random seed: 1
 -----------------------------------------------------------------------------------------
 [DATA]
    data:          planet-mmi-trainingset.txt
    # planets:     3514
 -----------------------------------------------------------------------------------------
 [TRAINING]
-   num_labels:    3
-   batch_size:    80
+   num_labels:    2
+   batch_size:    5
    lr:            0.002
-   epochs:        10
+   epochs:        100
 
-| epoch   1 | loss    nan |    nan bits | time 0:00:00   
-| epoch   2 | loss    nan |    nan bits | time 0:00:00   
-| epoch   3 | loss    nan |    nan bits | time 0:00:00   
-| epoch   4 | loss    nan |    nan bits | time 0:00:00   
-| epoch   5 | loss    nan |    nan bits | time 0:00:00   
-| epoch   6 | loss    nan |    nan bits | time 0:00:00   
-| epoch   7 | loss    nan |    nan bits | time 0:00:00   
-| epoch   8 | loss    nan |    nan bits | time 0:00:00   
-| epoch   9 | loss    nan |    nan bits | time 0:00:00   
-| epoch  10 | loss    nan |    nan bits | time 0:00:00   
+| epoch   1 | loss 0.103866344326 | -0.149847459874 bits | time 0:00:00   
+| epoch   2 | loss 0.000044320081 | -0.000063940361 bits | time 0:00:00   
+| epoch   3 | loss 0.000009678082 | -0.000013962520 bits | time 0:00:00   
+| epoch   4 | loss 0.000003190841 | -0.000004603410 bits | time 0:00:00   
+| epoch   5 | loss 0.000001774234 | -0.000002559679 bits | time 0:00:00   
+| epoch   6 | loss 0.000002718243 | -0.000003921596 bits | time 0:00:00   
+| epoch   7 | loss 0.000004581757 | -0.000006610079 bits | time 0:00:00   
+| epoch   8 | loss 0.000122505350 | -0.000176737861 bits | time 0:00:00   
+| epoch   9 | loss 0.000023507716 | -0.000033914465 bits | time 0:00:00   
+| epoch  10 | loss 0.000207066875 | -0.000298734354 bits | time 0:00:00   
+| epoch  11 | loss 0.000109399789 | -0.000157830534 bits | time 0:00:00   
+| epoch  12 | loss 0.000046985502 | -0.000067785751 bits | time 0:00:00   
+| epoch  13 | loss 0.000150101877 | -0.000216551233 bits | time 0:00:00   
+| epoch  14 | loss 0.000200982538 | -0.000289956511 bits | time 0:00:00   
+| epoch  15 | loss 0.000027210750 | -0.000039256814 bits | time 0:00:00   
+| epoch  16 | loss 0.000122335015 | -0.000176492119 bits | time 0:00:00   
+| epoch  17 | loss 0.000112551544 | -0.000162377554 bits | time 0:00:00   
+| epoch  18 | loss 0.000143237592 | -0.000206648164 bits | time 0:00:00   
+| epoch  19 | loss 0.000188845405 | -0.000272446329 bits | time 0:00:00   
+| epoch  20 | loss 0.000019473253 | -0.000028093965 bits | time 0:00:00   
+| epoch  21 | loss 0.000498060905 | -0.000718549998 bits | time 0:00:00   
+| epoch  22 | loss 0.000002091674 | -0.000003017647 bits | time 0:00:00   
+| epoch  23 | loss 0.000001612717 | -0.000002326659 bits | time 0:00:00   
+| epoch  24 | loss 0.000115756120 | -0.000167000781 bits | time 0:00:00   
+| epoch  25 | loss 0.000166142987 | -0.000239693664 bits | time 0:00:00   
+| epoch  26 | loss 0.000027785345 | -0.000040085780 bits | time 0:00:00   
+| epoch  27 | loss 0.000082706235 | -0.000119319875 bits | time 0:00:00   
+| epoch  28 | loss 0.000124147318 | -0.000179106720 bits | time 0:00:00   
+| epoch  29 | loss 0.000016025764 | -0.000023120291 bits | time 0:00:00   
+| epoch  30 | loss 0.000075632020 | -0.000109113940 bits | time 0:00:00   
+| epoch  31 | loss 0.000115999796 | -0.000167352330 bits | time 0:00:00   
+| epoch  32 | loss 0.000067738347 | -0.000097725778 bits | time 0:00:00   
+| epoch  33 | loss 0.000096468803 | -0.000139175064 bits | time 0:00:00   
+| epoch  34 | loss 0.000420130249 | -0.000606119826 bits | time 0:00:00   
+| epoch  35 | loss 0.000001365057 | -0.000001969360 bits | time 0:00:00   
+| epoch  36 | loss 0.000003764843 | -0.000005431520 bits | time 0:00:00   
+| epoch  37 | loss 0.000145188690 | -0.000209463004 bits | time 0:00:00   
+| epoch  38 | loss 0.000292711967 | -0.000422294103 bits | time 0:00:00   
+| epoch  39 | loss 0.000003048994 | -0.000004398768 bits | time 0:00:00   
+| epoch  40 | loss 0.000153733945 | -0.000221791200 bits | time 0:00:00   
+| epoch  41 | loss 0.000140458642 | -0.000202638987 bits | time 0:00:00   
+| epoch  42 | loss 0.000004496039 | -0.000006486413 bits | time 0:00:00   
+| epoch  43 | loss 0.000141386457 | -0.000203977540 bits | time 0:00:00   
+| epoch  44 | loss 0.000171719116 | -0.000247738318 bits | time 0:00:00   
+| epoch  45 | loss 0.000005613265 | -0.000008098230 bits | time 0:00:00   
+| epoch  46 | loss 0.000078860760 | -0.000113772028 bits | time 0:00:00   
+| epoch  47 | loss 0.000154072835 | -0.000222280115 bits | time 0:00:00   
+| epoch  48 | loss 0.000089057479 | -0.000128482783 bits | time 0:00:00   
+| epoch  49 | loss 0.000216023427 | -0.000311655927 bits | time 0:00:00   
+| epoch  50 | loss 0.000207841057 | -0.000299851262 bits | time 0:00:00   
+| epoch  51 | loss 0.000002867636 | -0.000004137125 bits | time 0:00:00   
+| epoch  52 | loss 0.000278353098 | -0.000401578634 bits | time 0:00:00   
+| epoch  53 | loss 0.000002024693 | -0.000002921014 bits | time 0:00:00   
+| epoch  54 | loss 0.000062317886 | -0.000089905704 bits | time 0:00:00   
+| epoch  55 | loss 0.000050997158 | -0.000073573346 bits | time 0:00:00   
+| epoch  56 | loss 0.000109050386 | -0.000157326451 bits | time 0:00:00   
+| epoch  57 | loss 0.000115875499 | -0.000167173008 bits | time 0:00:00   
+| epoch  58 | loss 0.000115763666 | -0.000167011667 bits | time 0:00:00   
+| epoch  59 | loss 0.000064139261 | -0.000092533394 bits | time 0:00:00   
+| epoch  60 | loss 0.000037111141 | -0.000053540058 bits | time 0:00:00   
+| epoch  61 | loss 0.000094896699 | -0.000136906997 bits | time 0:00:00   
+| epoch  62 | loss 0.000161139165 | -0.000232474674 bits | time 0:00:00   
+| epoch  63 | loss 0.000442298598 | -0.000638101994 bits | time 0:00:00   
+| epoch  64 | loss 0.000009979581 | -0.000014397492 bits | time 0:00:00   
+| epoch  65 | loss 0.000005548489 | -0.000008004777 bits | time 0:00:00   
+| epoch  66 | loss 0.000566175703 | -0.000816818879 bits | time 0:00:00   
+| epoch  67 | loss 0.000000420454 | -0.000000606587 bits | time 0:00:00   
+| epoch  68 | loss 0.000002542142 | -0.000003667536 bits | time 0:00:00   
+| epoch  69 | loss 0.000113544983 | -0.000163810784 bits | time 0:00:00   
+| epoch  70 | loss 0.000035457302 | -0.000051154074 bits | time 0:00:00   
+| epoch  71 | loss 0.000181978576 | -0.000262539590 bits | time 0:00:00   
+| epoch  72 | loss 0.000017573450 | -0.000025353130 bits | time 0:00:00   
+| epoch  73 | loss 0.000226216584 | -0.000326361544 bits | time 0:00:00   
+| epoch  74 | loss 0.000086064698 | -0.000124165113 bits | time 0:00:00   
+| epoch  75 | loss 0.000045461217 | -0.000065586673 bits | time 0:00:00   
+| epoch  76 | loss 0.000262890737 | -0.000379271163 bits | time 0:00:00   
+| epoch  77 | loss 0.000019968065 | -0.000028807828 bits | time 0:00:00   
+| epoch  78 | loss 0.000177487371 | -0.000256060149 bits | time 0:00:00   
+| epoch  79 | loss 0.000026308032 | -0.000037954467 bits | time 0:00:00   
+| epoch  80 | loss 0.000077405576 | -0.000111672641 bits | time 0:00:00   
+| epoch  81 | loss 0.000069344790 | -0.000100043384 bits | time 0:00:00   
+| epoch  82 | loss 0.000203712058 | -0.000293894376 bits | time 0:00:00   
+| epoch  83 | loss 0.000079908717 | -0.000115283910 bits | time 0:00:00   
+| epoch  84 | loss 0.000050763996 | -0.000073236965 bits | time 0:00:00   
+| epoch  85 | loss 0.000041217587 | -0.000059464408 bits | time 0:00:00   
+| epoch  86 | loss 0.000132988306 | -0.000191861570 bits | time 0:00:00   
+| epoch  87 | loss 0.000126725664 | -0.000182826487 bits | time 0:00:00   
+| epoch  88 | loss 0.000040456292 | -0.000058366092 bits | time 0:00:00   
+| epoch  89 | loss 0.000156640583 | -0.000225984592 bits | time 0:00:00   
+| epoch  90 | loss 0.000039362890 | -0.000056788647 bits | time 0:00:00   
+| epoch  91 | loss 0.000193068517 | -0.000278538991 bits | time 0:00:00   
+| epoch  92 | loss 0.000143128557 | -0.000206490860 bits | time 0:00:00   
+| epoch  93 | loss 0.000030313328 | -0.000043732888 bits | time 0:00:00   
+| epoch  94 | loss 0.000053511320 | -0.000077200517 bits | time 0:00:00   
+| epoch  95 | loss 0.000289368426 | -0.000417470393 bits | time 0:00:00   
+| epoch  96 | loss 0.000023682375 | -0.000034166445 bits | time 0:00:00   
+| epoch  97 | loss 0.000073620215 | -0.000106211519 bits | time 0:00:00   
+| epoch  98 | loss 0.000046231499 | -0.000066697954 bits | time 0:00:00   
+| epoch  99 | loss 0.000132859940 | -0.000191676377 bits | time 0:00:00   
+| epoch 100 | loss 0.000187446603 | -0.000270428285 bits | time 0:00:00   
 
-Training time 0:00:00   
+Training time 0:01:05   
 =========================================================================================
 =========================================================================================

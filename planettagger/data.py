@@ -18,6 +18,7 @@ class Data(object):
         # "planet" defined by a list: [Teff, logg, [Fe/H], Rp/R*, P]
         self.planet2i = {self.PAD: 0} #will contain each "planet" in the training set, uniquely
         self.i2planet = [self.PAD]
+        self.targetIdxs = []
 
         self.label_counter = Counter()
 
@@ -78,9 +79,9 @@ class Data(object):
             return left + right
 
         contexts = [get_context(i, j, width) for (i, j) in batch] # list of [left,right]s to make up X
-        targets = [self.systems[i][j] for (i, j) in batch]        # list of individual words to make up Y
-        targets = [self.i2planet[k] for k in targets]
-
+        targetIdxs = [self.systems[i][j] for (i, j) in batch]        # list of individual words to make up Y
+        self.targetIdxs = targetIdxs
+        targets = [self.i2planet[k] for k in targetIdxs]
         X = torch.FloatTensor(contexts).to(device)  # B x 2width x num_planet_features, where B = batch size = 15 for basic example
         Y1 = torch.FloatTensor(targets).to(device)  # B x num_planet_features
         return X, Y1

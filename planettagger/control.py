@@ -19,7 +19,7 @@ class Control(nn.Module):
         self.device = device
         self.logger = logger
 
-    def train(self, data, lr, epochs):
+    def train(self, data, data_path, lr, epochs):
         self.log_data(data)
         self.logger.log('[TRAINING]')
         self.logger.log('   num_labels:    %d' % self.model.num_labels)
@@ -31,6 +31,9 @@ class Control(nn.Module):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
         start_time = time.time()
 
+        epochLog = []
+        lossLog = []
+
         try:
             for epoch in range(1, epochs + 1):
                 avg_loss, epoch_time = self.do_epoch(data, optimizer)
@@ -41,6 +44,9 @@ class Control(nn.Module):
                                 'time {:10s}'.format(
                                     epoch, avg_loss, bits,
                                     str(timedelta(seconds=int(epoch_time)))))
+
+                epochLog.append(epoch)
+                lossLog.append(avg_loss)
                 with open(self.model_path, 'wb') as f:
                     torch.save(self.model, f)
 
@@ -54,6 +60,9 @@ class Control(nn.Module):
         self.load_model()
         self.logger.log('=' * 89)
         self.logger.log('=' * 89)
+
+        epochLosses = np.vstack((np.array(epochLog).T,np.array(lossLog).T)).T
+        np.save("./{0}_losses.npy".format(data_path[:-4]),epochLosses)
 
         return 
 
@@ -87,18 +96,29 @@ class Control(nn.Module):
         clustering = [{} for z in range(self.model.num_labels)]
 
         all_future_probs = np.zeros((1,self.model.num_labels))
+        all_idxs = np.zeros((1,1))
         with torch.no_grad():
             for batch in batches:
                 X, Y1 = data.tensorize_batch(batch, self.device,self.model.width)
+                #print(type(Y1))
+                #print(Y1.shape)
+                #print(type(data.targetIdxs))
+                #print(len(data.targetIdxs))
                 future_probs, future_max_probs, future_indices = self.model(X, Y1, is_training=False)
                 all_future_probs = np.vstack((all_future_probs,future_probs.numpy()))
+                all_idxs = np.vstack((all_idxs,np.atleast_2d(np.array(data.targetIdxs)).T))
                 for k, (i, j) in enumerate(batch):
                     z = future_indices[k].max()
                     zseqs[i][j] = z
                     clustering[z][data.systems[i][j]] = True
 
         all_future_probs = all_future_probs[1:]
+        all_idxs = all_idxs[1:].astype(int)
+        all_idxs = all_idxs[:,0] - 1 # 1-indexing to 0-indexing
+        #all_future_probs = all_future_probs[all_idxs]
+
         np.save("./{0}_classprobs.npy".format(data_path[:-4]),all_future_probs)
+        np.save("./{0}_idxs.npy".format(data_path[:-4]),all_idxs)
         return future_probs, zseqs, clustering
 
 
