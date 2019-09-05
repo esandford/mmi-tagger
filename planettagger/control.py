@@ -6,18 +6,62 @@ import time
 import torch
 import torch.nn as nn
 import numpy as np
+import pickle
 
 from datetime import timedelta
 
+def calculateEntropy(probs):
+    x = np.multiply(probs,np.log(probs))
+    entro = -1. * np.sum(x)
+    return entro
+
+def calculateLoss(targetTruths,data_path):
+    """
+    Calculate the loss function if everything were labeled correctly, i.e. the "goal"
+    loss function.
+
+    #contextTruths = length Batchsize list, each entry of which is a list of length 2*width
+    #                each sublist has entries of values between 0....(nClasses - 1)
+    #                corresponding to the true class membership of that context planet.
+    
+    targetTruths = length Batchsize list, each entry of which is a value between 0...(nclasses-1)
+                   corresponding tot he true class membership of that target planet.
+    """
+    #evaluate loss function for truths
+    B = int(len(targetTruths))
+    nClasses = int(np.max(np.array(targetTruths)) + 1)
+
+    #make an array of class probabilities for the target planets
+    #e.g. if there are classes 0,1,2 and planet i is of class 0, the ith 
+    # row in the array should be [1 0 0]
+    pZ_Y = np.zeros((B,nClasses))
+
+    for i in range(B):
+        trueClass_i = int(targetTruths[i][0])
+        pZ_Y[i][trueClass_i] = 1
+
+    pZ = np.mean(pZ_Y,axis=0)
+    hZ = calculateEntropy(pZ)
+
+    #if everything is working perfectly, the class labels
+    # predicted by the contexts should be the same as those
+    # predicted by the target planets themselves. 
+
+    hZ_X_ub = -1.0*np.mean(np.sum(pZ_Y,axis=1))
+    loss = hZ_X_ub - hZ
+
+    return loss
+
 class Control(nn.Module):
 
-    def __init__(self, model, model_path, batch_size, device, logger):
+    def __init__(self, model, model_path, batch_size, device, logger, truth_known):
         super(Control, self).__init__()
         self.model = model
         self.model_path = model_path
         self.batch_size = batch_size
         self.device = device
         self.logger = logger
+        self.truth_known = truth_known
 
     def train(self, data, data_path, lr, epochs):
         self.log_data(data)
@@ -48,7 +92,10 @@ class Control(nn.Module):
                 epochLog.append(epoch)
                 lossLog.append(avg_loss)
                 with open(self.model_path, 'wb') as f:
-                    torch.save(self.model, f)
+                    state = {'epoch': epoch + 1, 'state_dict': self.model.state_dict(),
+                     'optimizer': optimizer.state_dict()}
+                    torch.save(state, f)
+                    #torch.save(self.model, f)
 
         except KeyboardInterrupt:
             self.logger.log('-' * 89)
@@ -57,7 +104,7 @@ class Control(nn.Module):
         self.logger.log('\nTraining time {:10s}'.format(
             str(timedelta(seconds=int(time.time() - start_time)))))
 
-        self.load_model()
+        #self.load_model(self.lr)
         self.logger.log('=' * 89)
         self.logger.log('=' * 89)
 
@@ -76,7 +123,7 @@ class Control(nn.Module):
         #print(type(batches)) #list, each element of which is 1 batch 
         for batch in batches:
             self.model.zero_grad()
-            X, Y1 = data.tensorize_batch(batch, self.device, self.model.width)
+            X, Y1, contextTruths, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
             #print("X shape is {0}".format(X.shape))    # Batchsize x 2width x numPlanetFeatures
             #print("Y1 shape is {0}".format(Y1.shape))  # Batchsize x numPlanetFeatures
             loss = self.model(X, Y1, is_training=True) # runs MMIModel.forward(X, Y1, is_training=True)
@@ -89,7 +136,7 @@ class Control(nn.Module):
         
         return avg_loss, epoch_time
 
-    def classify(self, data_path, data):
+    def classify(self, data_path, data, num_labels):
         self.model.eval()
         batches = data.get_batches(self.batch_size)
         zseqs = [[False for w in sys] for sys in data.systems]
@@ -97,13 +144,20 @@ class Control(nn.Module):
 
         all_future_probs = np.zeros((1,self.model.num_labels))
         all_idxs = np.zeros((1,1))
+        avg_truth_loss = 0.
         with torch.no_grad():
             for batch in batches:
-                X, Y1 = data.tensorize_batch(batch, self.device,self.model.width)
+                X, Y1, contextTruths, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
                 #print(type(Y1))
                 #print(Y1.shape)
                 #print(type(data.targetIdxs))
                 #print(len(data.targetIdxs))
+                if self.truth_known:
+                    truth_loss = calculateLoss(targetTruths,data_path)
+                    #print("loss is {0}".format(loss))
+                    avg_truth_loss += truth_loss / len(batches)
+
+
                 future_probs, future_max_probs, future_indices = self.model(X, Y1, is_training=False)
                 all_future_probs = np.vstack((all_future_probs,future_probs.numpy()))
                 all_idxs = np.vstack((all_idxs,np.atleast_2d(np.array(data.targetIdxs)).T))
@@ -119,12 +173,22 @@ class Control(nn.Module):
 
         np.save("./{0}_classprobs.npy".format(data_path[:-4]),all_future_probs)
         np.save("./{0}_idxs.npy".format(data_path[:-4]),all_idxs)
+        np.save("./{0}_optimalLoss.npy".format(data_path[:-4]),avg_truth_loss)
+        
+        maxMI = (- avg_truth_loss) * math.log(math.e,2)
+        print("avg_truth_loss is {0}; max MI is {1}".format(avg_truth_loss,maxMI))
+        
         return future_probs, zseqs, clustering
 
 
-    def load_model(self):
+    def load_model(self,lr):
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
         with open(self.model_path, 'rb') as f:
-            self.model = torch.load(f)
+            #self.model = torch.load(f)
+            checkpoint = torch.load(f)
+            self.model.load_state_dict(checkpoint['state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            print("=> loaded checkpoint '{}' (epoch {})".format(f, checkpoint['epoch']))
 
     def log_data(self, data):
         self.logger.log('-' * 89)

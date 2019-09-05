@@ -8,7 +8,7 @@ from collections import Counter
 
 class Data(object):
 
-    def __init__(self, num_planet_features, data_path):
+    def __init__(self, num_planet_features, data_path, truth_known):
         self.data_path = data_path
         self.PAD = np.zeros(num_planet_features)
         self.PAD = tuple(self.PAD)
@@ -22,9 +22,11 @@ class Data(object):
 
         self.label_counter = Counter()
 
-        self.get_data()
+        self.truths = []
+        
+        self.get_data(truth_known)
 
-    def get_data(self):
+    def get_data(self,truth_known):
         #wcount = Counter()
         #ccount = Counter()
         def add(p):
@@ -38,6 +40,14 @@ class Data(object):
             trainingDat = pickle.load(picklefile)
             for sys in trainingDat:
                 self.systems.append([add(planet) for planet in sys])
+
+        if truth_known:
+            truthPath = "./{0}_truthsOrganized.txt".format(self.data_path[:-4])
+            with open(truthPath, "rb") as truthfile:
+                truthsDat = pickle.load(truthfile)
+                for sys in truthsDat:
+                    self.truths.append([truth for truth in sys])
+
 
     def get_batches(self, batch_size):
         pairs = []
@@ -56,10 +66,13 @@ class Data(object):
                                   len(self.i2planet[self.systems[x[0]][x[1]]]),
                                   reverse=True)
             batches.append(sorted_batch)
+        #print(len(batches))
+        #print(len(batches[0]))
+        #print(len(batches[1]))
         return batches
 
-    def tensorize_batch(self, batch, device, width):
-        def get_context(i, j, width):
+    def tensorize_batch(self, batch, device, width, truth_known):
+        def get_context(i, j, width, truth_known):
             left = [0 for _ in range(width - j)] + \
                    self.systems[i][max(0, j - width):j]
             right = [0 for _ in range((j + width) - len(self.systems[i]) + 1)] + \
@@ -67,6 +80,14 @@ class Data(object):
 
             left = [self.i2planet[k] for k in left]
             right = [self.i2planet[k] for k in right]
+
+            if truth_known:
+                leftTruth = [0 for _ in range(width - j)] + \
+                            self.truths[i][max(0, j - width):j]
+                rightTruth = [0 for _ in range((j + width) - len(self.truths[i]) + 1)] + \
+                            self.truths[i][j + 1: min(len(self.truths[i]), j + width) + 1]
+
+                return left + right, leftTruth + rightTruth
 
             # below for POS tagging example, but analogous for planets, except that each "planet" 
             #   is an array of data rather than an index to a word:
@@ -76,12 +97,24 @@ class Data(object):
             #    left = [0,0] (signifying "<pad> <pad>"); right = [3,4] (signifying "dog chased")
             # if e.g. i==0, j==4, width=2 (referring to sentence "the dog chased the cat", word "cat"):
             #    left = [4,2] (signifying "chased the"); right = [0,0] (signifying "<pad> <pad>")
-            return left + right
+            else:
+                return left + right
 
-        contexts = [get_context(i, j, width) for (i, j) in batch] # list of [left,right]s to make up X
+
         targetIdxs = [self.systems[i][j] for (i, j) in batch]        # list of individual words to make up Y
         self.targetIdxs = targetIdxs
         targets = [self.i2planet[k] for k in targetIdxs]
+
+        if truth_known:
+            contexts = [get_context(i, j, width, truth_known)[0] for (i, j) in batch]
+            contextTruths = [get_context(i, j, width, truth_known)[1] for (i, j) in batch]
+            targetTruths = [self.truths[i][j] for (i, j) in batch]
+        else:
+            contexts = [get_context(i, j, width, truth_known) for (i, j) in batch] # list of [left,right]s to make up X
+            contextTruths = None
+            targetTruths = None
+
+        
         X = torch.FloatTensor(contexts).to(device)  # B x 2width x num_planet_features, where B = batch size = 15 for basic example
         Y1 = torch.FloatTensor(targets).to(device)  # B x num_planet_features
-        return X, Y1
+        return X, Y1, contextTruths, targetTruths

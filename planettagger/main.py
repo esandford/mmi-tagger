@@ -15,20 +15,23 @@ def main(args):
     random.seed(args.seed)
     torch.manual_seed(args.seed)
     device = torch.device('cuda' if args.cuda else 'cpu')
-    data = Data(args.num_planet_features, args.data)
+    data = Data(args.num_planet_features, args.data, args.truth_known)
 
     model = MMIModel(args.num_planet_features, args.num_labels, args.width).to(device)
     logger = Logger(args.model + '.log', args.train)
     logger.log('python ' + ' '.join(sys.argv) + '\n')
     logger.log('Random seed: %d' % args.seed)
-    control = Control(model, args.model, args.batch_size, device, logger)
+    control = Control(model, args.model, args.batch_size, device, logger, args.truth_known)
 
     if args.train:
+        if os.path.exists(args.model):
+            control.load_model(args.lr)
+
         control.train(data, args.data, args.lr, args.epochs)
 
     elif os.path.exists(args.model):
-        control.load_model()
-        control.classify(args.data, data)
+        control.load_model(args.lr)
+        control.classify(args.data, data, args.num_labels)
        
 
 if __name__ == '__main__':
@@ -59,6 +62,8 @@ if __name__ == '__main__':
                         help='random seed [%(default)d]')
     parser.add_argument('--cuda', action='store_true',
                         help='use CUDA?')
+    parser.add_argument('--truth_known', action='store_true',
+                        help='truth known?')
 
     args = parser.parse_args()
     main(args)

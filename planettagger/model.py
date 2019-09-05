@@ -39,19 +39,23 @@ class Loss(nn.Module):
         #print("indivPlanetRep shape is {0}".format(indivPlanetRep.shape))      # Batchsize x num_labels
         #print("planetContextRep shape is {0}".format(planetContextRep.shape))  # Batchsize x num_labels
         #print("softmax_scale is {0}".format(softmax_scale))
-        pZ_Y = F.softmax(softmax_scale*indivPlanetRep, dim=1)
+        pZ_Y = F.softmax(softmax_scale*indivPlanetRep, dim=1) # B x num_labels
         #print(pZ_Y.shape)
         #print(type(pZ_Y))
         #print(pZ_Y)
-        pZ = pZ_Y.mean(0)
-        #print("pZ is {0}".format(pZ))
-        hZ = self.entropy(pZ)
-        #print("hZ is {0}".format(hZ))
+        pZ = pZ_Y.mean(0) # num_labels
+        #print(pZ.shape)
+        #print("pZ shape is {0}".format(pZ.shape))
+        hZ = self.entropy(pZ) # scalar
+        #print("hZ shape is {0}".format(hZ.shape))
 
-        x = pZ_Y * F.log_softmax(softmax_scale*planetContextRep, dim=1)  # B x m
+        #print("pZ_Y shape is {0}".format(pZ_Y.shape))
+        #print("log_softmax shape is {0}".format(F.log_softmax(softmax_scale*planetContextRep, dim=1).shape))
+        x = pZ_Y * F.log_softmax(softmax_scale*planetContextRep, dim=1)  # B x num_labels * B x num_labels (elementwise multiplication)
+        #print("x shape is {0}".format(x.shape))
         #print("x is {0}".format(x))
-        hZ_X_ub = -1.0 * x.sum(dim=1).mean()
-        #print("hZ_X_ub is {0}".format(hZ_X_ub))
+        hZ_X_ub = -1.0 * x.sum(dim=1).mean() # scalar
+        #print("hZ_X_ub shape is {0}".format(hZ_X_ub.shape))
 
         loss = hZ_X_ub - hZ
         #print("loss is {0}".format(loss))
@@ -83,13 +87,15 @@ class ContextRep(nn.Module):
         self.linear1 = nn.Linear(2 * width * num_planet_features, 20)
         self.linear2 = nn.Linear(20, 10)
         self.linear3 = nn.Linear(10, num_labels)
+        self.drop_layer = nn.Dropout(p=0.05)
+
 
     def forward(self, contextPlanetData):
         #contextPlanets will be of the shape: Batchsize x 2width x numPlanetFeatures, e.g. shape (15, 4, 5)
         # self.linear1 wants to operate on something of shape (Batchsize, 2width*numPlanetFeatuers), e.g. (15, 20)
-        rep = self.linear1(contextPlanetData.view(contextPlanetData.shape[0], -1))  # returns Batchsize x numLabels
-        rep = self.linear2(rep)
-        rep = self.linear3(rep)
+        rep = self.drop_layer(self.linear1(contextPlanetData.view(contextPlanetData.shape[0], -1)))  # returns Batchsize x numLabels
+        rep = self.drop_layer(F.relu(self.linear2(rep)))
+        rep = self.drop_layer(F.relu(self.linear3(rep)))
         #print(rep.shape)
         #print(type(rep))
         #rint("ContextRep:")
@@ -107,6 +113,7 @@ class PlanetRep(nn.Module):
         self.linear1 = nn.Linear(num_planet_features,20)
         self.linear2 = nn.Linear(20,10)
         self.linear3 = nn.Linear(10,num_labels)
+        self.drop_layer = nn.Dropout(p=0.05)
 
     def forward(self, indivPlanetData):
         #self.linear wants to operate on something of shape (Batchsize, num_planet_features)
@@ -115,9 +122,9 @@ class PlanetRep(nn.Module):
         #print(indivPlanetData.shape) # Batchsize x numPlanetFeatures
         #print(indivPlanetData.view(indivPlanetData.shape[0],-1).shape) #also Batchsize x numPlanetFeatures. in fact same as indivPlanetData
         #rep = self.linear(indivPlanetData.view(indivPlanetData.shape[0],-1))  # B x num_labels
-        rep = self.linear1(indivPlanetData) #shape Batchsize x num_labels
-        rep = self.linear2(rep)
-        rep = self.linear3(rep)
+        rep = self.drop_layer(self.linear1(indivPlanetData)) #shape Batchsize x num_labels
+        rep = self.drop_layer(F.relu(self.linear2(rep)))
+        rep = self.drop_layer(F.relu(self.linear3(rep)))
         #print(type(rep)) #Torch tensor full of nans---but only full of nans because something is bad about the loss or entropy functions.
         #print(rep.shape)
         #print("PlanetRep:")
