@@ -33,6 +33,7 @@ class Data(object):
             # "p" is a list: [Teff, logg, [Fe/H], Rp/R*, P]
             if tuple(p) not in self.planet2i:
                 self.i2planet.append(p)
+                print(p)
                 self.planet2i[tuple(p)] = len(self.i2planet) - 1
             return self.planet2i[tuple(p)]
         
@@ -75,8 +76,8 @@ class Data(object):
         def get_context(i, j, width, truth_known):
             left = [0 for _ in range(width - j)] + \
                    self.systems[i][max(0, j - width):j]
-            right = [0 for _ in range((j + width) - len(self.systems[i]) + 1)] + \
-                    self.systems[i][j + 1: min(len(self.systems[i]), j + width) + 1]
+            right = self.systems[i][j + 1: min(len(self.systems[i]), j + width) + 1] + \
+                    [0 for _ in range((j + width) - len(self.systems[i]) + 1)]
 
             left = [self.i2planet[k] for k in left]
             right = [self.i2planet[k] for k in right]
@@ -114,7 +115,12 @@ class Data(object):
             contextTruths = None
             targetTruths = None
 
+        #print(self.systems)
         
         X = torch.FloatTensor(contexts).to(device)  # B x 2width x num_planet_features, where B = batch size = 15 for basic example
         Y1 = torch.FloatTensor(targets).to(device)  # B x num_planet_features
+        
+        print(Y1)
+        print(X)
+
         return X, Y1, contextTruths, targetTruths

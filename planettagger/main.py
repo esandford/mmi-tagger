@@ -17,7 +17,7 @@ def main(args):
     device = torch.device('cuda' if args.cuda else 'cpu')
     data = Data(args.num_planet_features, args.data, args.truth_known)
 
-    model = MMIModel(args.num_planet_features, args.num_labels, args.width).to(device)
+    model = MMIModel(args.num_planet_features, args.num_labels, args.width, args.dropout_prob).to(device)
     logger = Logger(args.model + '.log', args.train)
     logger.log('python ' + ' '.join(sys.argv) + '\n')
     logger.log('Random seed: %d' % args.seed)
@@ -26,7 +26,7 @@ def main(args):
     if args.train:
         if os.path.exists(args.model):
             control.load_model(args.lr)
-
+        print("Resuming...")
         control.train(data, args.data, args.lr, args.epochs)
 
     elif os.path.exists(args.model):
@@ -42,10 +42,12 @@ if __name__ == '__main__':
                         help='model path')
     parser.add_argument('data', type=str,
                         help='data path (X.words, assumes X.tags exists)')
-    parser.add_argument('--num_labels', type=int, default=45, metavar='m',
+    parser.add_argument('--num_labels', type=int, default=45,
                         help='number of labels to induce [%(default)d]')
-    parser.add_argument('--num_planet_features', type=int, default=5, metavar='m',
+    parser.add_argument('--num_planet_features', type=int, default=5,
                         help='number of features known about each planet [%(default)d]')
+    parser.add_argument('--dropout_prob', type=float, default=0.05,
+                        help='dropout probability in network layers [%(default)g]')
     parser.add_argument('--train', action='store_true',
                         help='train?')
     parser.add_argument('--batch_size', type=int, default=10, metavar='B',

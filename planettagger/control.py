@@ -97,6 +97,10 @@ class Control(nn.Module):
                     torch.save(state, f)
                     #torch.save(self.model, f)
 
+            for epoch in range(1):
+                avg_loss, epoch_time = self.do_epoch(data, optimizer)
+                
+            
         except KeyboardInterrupt:
             self.logger.log('-' * 89)
             self.logger.log('Exiting from training early')
@@ -110,6 +114,7 @@ class Control(nn.Module):
 
         epochLosses = np.vstack((np.array(epochLog).T,np.array(lossLog).T)).T
         np.save("./{0}_losses.npy".format(data_path[:-4]),epochLosses)
+
 
         return 
 
