@@ -109,21 +109,29 @@ class Control(nn.Module):
         clustering = [{} for z in range(self.model.num_labels)]
 
         all_future_probs = np.zeros((1,self.model.num_labels))
+        all_idxs = np.zeros((1,1))
         with torch.no_grad():
             for batch in batches:
                 X, Y1, Y2, lengths = data.tensorize_batch(batch, self.device,self.model.width)
+                #print(type(Y1))
+                #print(Y1.shape)
+                #print(type(data.targetIdxs))
+                #print(len(data.targetIdxs))
                 future_probs, future_max_probs, future_indices = self.model(X, Y1, Y2, lengths, is_training=False)
                 all_future_probs = np.vstack((all_future_probs,future_probs.numpy()))
+                all_idxs = np.vstack((all_idxs,np.atleast_2d(np.array(data.targetIdxs)).T))
                 for k, (i, j) in enumerate(batch):
                     z = future_indices[k].max()
                     zseqs[i][j] = z
                     clustering[z][data.sents[i][j]] = True
 
         all_future_probs = all_future_probs[1:]
-        print(Y1)
-        print(Y1.shape)
-        print(all_future_probs)
+        all_idxs = all_idxs[1:].astype(int)
+        all_idxs = all_idxs[:,0] - 1 # 1-indexing to 0-indexing
+        #all_future_probs = all_future_probs[all_idxs]
+
         np.save("./{0}_classprobs.npy".format(data_path[:-4]),all_future_probs)
+        np.save("./{0}_idxs.npy".format(data_path[:-4]),all_idxs)
         return future_probs, zseqs, clustering
 
 

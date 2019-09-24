@@ -23,6 +23,7 @@ class Data(object):
         self.word_counter = []
         self.char_counter = []
         self.label_counter = Counter()
+        self.targetIdxs = []
 
         self.get_data()
 
@@ -98,14 +99,16 @@ class Data(object):
             return left + right
 
         contexts = [get_context(i, j, width) for (i, j) in batch] # list of [left,right]s to make up X
-        targets = [self.sents[i][j] for (i, j) in batch]          # list of individual words to make up Y
+        self.targetIdxs = [self.sents[i][j] for (i, j) in batch]          # list of individual words to make up Y
+        targets = [self.sents[i][j] for (i, j) in batch]
         seqs = [torch.LongTensor([self.c2i[c] for c in self.i2w[target]]) # characters in Ys
                 for target in targets]
 
         X = torch.LongTensor(contexts).to(device)  # B x 2width, where B = batch size = 15 for basic example
         Y1 = torch.LongTensor(targets).to(device)  # B
+        print(self.sents)
         print(Y1)
-        print(Y1.shape)
+        #print(Y1.shape)
         Y2 = pad_sequence(seqs, padding_value=0).to(device)  # T x B, where T = maximum number of characters in any word in Y = 6 in basic example (for "chased")
         lengths = torch.LongTensor([seq.shape[0] for seq in seqs]).to(device) #B, number of characters in each word in batch
         return X, Y1, Y2, lengths
