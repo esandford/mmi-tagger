@@ -129,8 +129,8 @@ class Control(nn.Module):
         for batch in batches:
             self.model.zero_grad()
             X, Y1, contextTruths, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
-            #print("X shape is {0}".format(X.shape))    # Batchsize x 2width x numPlanetFeatures
-            #print("Y1 shape is {0}".format(Y1.shape))  # Batchsize x numPlanetFeatures
+            #print("X shape is {0}".format(X.shape))    # Batchsize x 2width x (num_planet_features + num_stellar_features)
+            #print("Y1 shape is {0}".format(Y1.shape))  # Batchsize x (num_planet_features + num_stellar_features)
             loss = self.model(X, Y1, is_training=True) # runs MMIModel.forward(X, Y1, is_training=True)
             #print("loss is {0}".format(loss))
             avg_loss += loss.item() / len(batches)

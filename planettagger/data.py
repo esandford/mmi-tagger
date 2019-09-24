@@ -8,9 +8,12 @@ from collections import Counter
 
 class Data(object):
 
-    def __init__(self, num_planet_features, data_path, truth_known):
+    def __init__(self, num_planet_features, num_stellar_features, data_path, truth_known):
+        self.num_features = num_planet_features + num_stellar_features
+        self.num_planet_features = num_planet_features
+        self.num_stellar_features = num_stellar_features
         self.data_path = data_path
-        self.PAD = np.zeros(num_planet_features)
+        self.PAD = np.zeros(self.num_features)
         self.PAD = tuple(self.PAD)
         self.systems = []   # will represent each training set planetary system as a list of indices
                             # e.g. [1,2,3,4,5],[6,7],[8,9] (each planet is unique, so we don't expect repeats)
@@ -33,7 +36,6 @@ class Data(object):
             # "p" is a list: [Teff, logg, [Fe/H], Rp/R*, P]
             if tuple(p) not in self.planet2i:
                 self.i2planet.append(p)
-                print(p)
                 self.planet2i[tuple(p)] = len(self.i2planet) - 1
             return self.planet2i[tuple(p)]
         
@@ -104,7 +106,9 @@ class Data(object):
 
         targetIdxs = [self.systems[i][j] for (i, j) in batch]        # list of individual words to make up Y
         self.targetIdxs = targetIdxs
-        targets = [self.i2planet[k] for k in targetIdxs]
+        
+        #keep only planet features, not stellar features, for Y1
+        targets = [self.i2planet[k][0:self.num_planet_features] for k in targetIdxs]
 
         if truth_known:
             contexts = [get_context(i, j, width, truth_known)[0] for (i, j) in batch]
@@ -117,10 +121,9 @@ class Data(object):
 
         #print(self.systems)
         
-        X = torch.FloatTensor(contexts).to(device)  # B x 2width x num_planet_features, where B = batch size = 15 for basic example
-        Y1 = torch.FloatTensor(targets).to(device)  # B x num_planet_features
-        
-        print(Y1)
-        print(X)
+        X = torch.FloatTensor(contexts).to(device)  # B x 2width x (num_planet_features + num_stellar_features), where B = batch size = 15 for basic example
+        Y1 = torch.FloatTensor(targets).to(device)  # B x (num_planet_features + num_stellar_features)
 
+        #print(X[0:10])
+        #print(Y1[0:10])
         return X, Y1, contextTruths, targetTruths
