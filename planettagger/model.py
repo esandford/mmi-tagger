@@ -45,7 +45,16 @@ class MMIModel(nn.Module):
 
             if self.plotting is True:
                 if self.iteration % 500 == 0:
-                    #self.plottedWeights, self.plottedBiases = plot_net(self.plottedWeights, planet_weights, planet_biases, net_name="planet representation",feature_names=self.feature_names,context_rep=False)
+                    self.netFig, self.plottedWeights, self.plottedBiases = plot_net(self.netFig,
+                                                                        self.plottedWeights, 
+                                                                        self.plottedBiases, 
+                                                                        planet_weights, 
+                                                                        planet_biases, 
+                                                                        net_name="planet representation",
+                                                                        feature_names=self.feature_names,
+                                                                        context_rep=False,
+                                                                        pause_time=0.01)
+                    """
                     self.netFig, self.plottedWeights, self.plottedBiases = plot_net(self.netFig,
                                                                         self.plottedWeights, 
                                                                         self.plottedBiases, 
@@ -56,6 +65,7 @@ class MMIModel(nn.Module):
                                                                         context_rep=True,
                                                                         context_width=2,
                                                                         pause_time=0.01)
+                    """
 
             self.iteration += 1
             return loss#, planet_weights, planet_biases, context_weights, context_biases

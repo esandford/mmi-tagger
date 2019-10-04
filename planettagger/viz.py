@@ -172,8 +172,9 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
         #ax.axhline(0.5)
         
         #colormap details
-        cmin = 0.
-        cmax = 0.
+        cmin = -5.
+        cmax = 5.
+        """
         for i in range(n_layers):
             ws = weights[i]
             bs = biases[i]
@@ -186,7 +187,7 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
                 cmin = np.min(bs)
             if np.max(bs) > cmax:
                 cmax = np.max(bs)
-
+        """
         cm = plt.get_cmap('Spectral') 
         cNorm  = colors.Normalize(vmin=cmin, vmax=cmax)
         scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
@@ -209,6 +210,10 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
             plottedBiases_thisLayer = []
             
             #regular nodes
+            #print(np.shape(ws))
+            #print(int(np.shape(ws)[0]))
+            #print(int(np.shape(ws)[1]))
+
             for ii in range(0,int(np.shape(ws)[0])):
                 plottedWeights_thisLayer_thisNeuron = []
                 for jj in range(0,int(np.shape(ws)[1])):
@@ -221,7 +226,7 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
                     pN = ax.plot(np.array((xStart,xEnd)),np.array((yStart,yEnd)), color=colorVal, ls='-',marker='None',lw=0.5)
                     plottedWeights_thisLayer_thisNeuron.append(pN[0])
                 plottedWeights_thisLayer.append(plottedWeights_thisLayer_thisNeuron)
-
+            
             #bias nodes
             for ii in range(0,len(bs)):
                 b = bs[ii]
@@ -243,8 +248,9 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
         plt.show()
 
     else:
-        cmin = 0.
-        cmax = 0.
+        cmin = -5
+        cmax = 5.
+        """
         for i in range(n_layers):
             ws = weights[i]
             bs = biases[i]
@@ -257,6 +263,7 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
                 cmin = np.min(bs)
             if np.max(bs) > cmax:
                 cmax = np.max(bs)
+        """
         cm = plt.get_cmap('Spectral') 
         cNorm  = colors.Normalize(vmin=cmin, vmax=cmax)
         scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
