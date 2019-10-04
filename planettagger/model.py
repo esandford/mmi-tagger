@@ -17,15 +17,20 @@ class MMIModel(nn.Module):
         self.dropout_prob = dropout_prob
         self.width = width
         self.loss = Loss()
-        #self.iteration = 0
 
         self.planetContext = ContextRep(width, num_planet_features, num_stellar_features, num_labels, dropout_prob)
         self.indivPlanet = PlanetRep(num_planet_features, num_labels, dropout_prob)
-        #print(type(self.planetContext))
-        #print(type(self.indivPlanet))
+
     def forward(self, planetContextData, indivPlanetData, is_training=True, softmax_scale=0.0005):
-        context_rep = self.planetContext(planetContextData)
-        planet_rep = self.indivPlanet(indivPlanetData)
+        context_rep, context_weights, context_biases = self.planetContext(planetContextData)
+        
+        #context_weights is a list of numpy arrays: [ (8, 20), (20, 10), (10, 3) ]
+        #context_biases is a list of numpy arrays: [ (20), (10), (3) ]
+        
+        planet_rep, planet_weights, planet_biases = self.indivPlanet(indivPlanetData)
+        #planet_weights is a list of numpy arrays: [ (2, 20), (20, 10), (10, 3) ]
+        #planet_biases is a list of numpy arrays: [ (20), (10), (3) ]
+        
         if is_training:
             loss = self.loss(context_rep, planet_rep)
             return loss
@@ -90,13 +95,16 @@ class ContextRep(nn.Module):
                                                                              # = (2width x numPlanetFeatures, numLabels)
                                                                              # = e.g. (4x5, numLabels)
                                                                              # = (20, numLabels)
-        self.linear1 = nn.Linear(2 * width * (num_planet_features + num_stellar_features), 20)
-        self.linear2 = nn.Linear(20, 10)
-        self.linear3 = nn.Linear(10, num_labels)
+        
+        self.architecture = [2*width*(num_planet_features+num_stellar_features), 20, 10, num_labels]
+        self.linear1 = nn.Linear(self.architecture[0],self.architecture[1])
+        self.linear2 = nn.Linear(self.architecture[1],self.architecture[2])
+        self.linear3 = nn.Linear(self.architecture[2],self.architecture[3])
         self.drop_layer = nn.Dropout(p=dropout_prob)
         self.iteration = 0
-        self.linear1weights = np.zeros((2*width*(num_planet_features + num_stellar_features)*20))
-        self.linear1biases = np.zeros((20))
+        #self.linear1weights = np.zeros((2*width*(num_planet_features + num_stellar_features)*20))
+        #self.linear1biases = np.zeros((20))
+        self.layers = [self.linear1, self.linear2, self.linear3]
 
 
     def forward(self, contextPlanetData):
@@ -105,37 +113,27 @@ class ContextRep(nn.Module):
         rep = self.drop_layer(self.linear1(contextPlanetData.view(contextPlanetData.shape[0], -1)))  # returns Batchsize x numLabels
         rep = self.drop_layer(F.relu(self.linear2(rep)))
         rep = self.drop_layer(F.relu(self.linear3(rep)))
-        #print(rep.shape)
-        #print(type(rep))
-        #rint("ContextRep:")
-        #print(rep)
+        
+        """
         if self.iteration % 100 == 0:
-            #print(self.iteration)
-            #print(list(self.linear1.parameters()))
             weights = list(self.linear1.parameters())[0].data
             biases = list(self.linear1.parameters())[1].data
 
-            #print("weights: ")
-            #print(weights)
-            #print("biases: ")
-            #print(biases)
-            #print(type(weights.data))
-            #print(type(biases.data))
-            #print(weights.data)
-            #print(biases.data)
-            #print(np.shape(weights.numpy()))
-            #print(weights)
-            #print(np.shape(biases.numpy()))
-            #print(biases)
             self.linear1biases = np.vstack((self.linear1biases,biases))
             self.linear1weights = np.vstack((self.linear1weights,np.ravel(weights)))
-            #print(np.shape(self.linear1biases))
             np.save("./ContextRep_linear1biases.npy",self.linear1biases)
             np.save("./ContextRep_linear1weights.npy",self.linear1weights)
 
         self.iteration += 1
+        """
+        weights = []
+        biases = []
 
-        return rep
+        for layer in self.layers:
+            weights.append(list(layer.parameters())[0].data.numpy().T)
+            biases.append(list(layer.parameters())[1].data.numpy().T)
+
+        return rep, weights, biases
 
 
 class PlanetRep(nn.Module):
@@ -145,45 +143,26 @@ class PlanetRep(nn.Module):
         # define how the layers are connected.
         super(PlanetRep, self).__init__()
         #self.linear = nn.Linear(num_planet_features,num_labels) # e.g. (5, numLabels)
-        self.linear1 = nn.Linear(num_planet_features,20)
-        self.linear2 = nn.Linear(20,10)
-        self.linear3 = nn.Linear(10,num_labels)
+        self.architecture = [num_planet_features, 20, 10, num_labels]
+        self.linear1 = nn.Linear(self.architecture[0], self.architecture[1])
+        self.linear2 = nn.Linear(self.architecture[1], self.architecture[2])
+        self.linear3 = nn.Linear(self.architecture[2], self.architecture[3])
         self.drop_layer = nn.Dropout(p=dropout_prob)
         self.iteration = 0
-        self.linear1weights = np.zeros((num_planet_features*20))
-        self.linear1biases = np.zeros((20))
+        #self.linear1weights = np.zeros((num_planet_features*20))
+        #self.linear1biases = np.zeros((20))
+        self.layers = [self.linear1, self.linear2, self.linear3]
 
     def forward(self, indivPlanetData):
         #self.linear wants to operate on something of shape (Batchsize, num_planet_features)
-        #print(indivPlanetData.shape)
-        #print(type(indivPlanetData)) # torch.Tensor
-        #print(indivPlanetData.shape) # Batchsize x numPlanetFeatures
-        #print(indivPlanetData.view(indivPlanetData.shape[0],-1).shape) #also Batchsize x numPlanetFeatures. in fact same as indivPlanetData
         #rep = self.linear(indivPlanetData.view(indivPlanetData.shape[0],-1))  # B x num_labels
         rep = self.drop_layer(self.linear1(indivPlanetData)) #shape Batchsize x num_labels
         rep = self.drop_layer(F.relu(self.linear2(rep)))
         rep = self.drop_layer(F.relu(self.linear3(rep)))
-        #print(type(rep)) #Torch tensor full of nans---but only full of nans because something is bad about the loss or entropy functions.
-        #print(rep.shape)
-        #print("PlanetRep:")
-        #print(rep)
+        """
         if self.iteration % 100 == 0:
-            #print(list(self.linear1.parameters()))
             weights = list(self.linear1.parameters())[0].data
             biases = list(self.linear1.parameters())[1].data
-
-            #print("weights: ")
-            #print(weights)
-            #print("biases: ")
-            #print(biases)
-            #print(type(weights.data))
-            #print(type(biases.data))
-            #print(weights.data)
-            #print(biases.data)
-            #print(np.shape(weights.numpy()))
-            #print(weights)
-            #print(np.shape(biases.numpy()))
-            #print(biases)
             self.linear1biases = np.vstack((self.linear1biases,biases))
             self.linear1weights = np.vstack((self.linear1weights,np.ravel(weights)))
 
@@ -191,6 +170,13 @@ class PlanetRep(nn.Module):
             np.save("./PlanetRep_linear1weights.npy",self.linear1weights)
 
         self.iteration += 1
+        """
+        weights = []
+        biases = []
 
-        return rep
+        for layer in self.layers:
+            weights.append(list(layer.parameters())[0].data.numpy().T)
+            biases.append(list(layer.parameters())[1].data.numpy().T)
+
+        return rep, weights, biases
 
