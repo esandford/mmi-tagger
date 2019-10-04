@@ -4,22 +4,31 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+from viz import plot_net
+
 class MMIModel(nn.Module):
 
-    def __init__(self, num_planet_features, num_stellar_features, num_labels, width, dropout_prob):
+    def __init__(self, num_planet_features, num_stellar_features, num_labels, width, dropout_prob, feature_names, plotting):
         # In the __init__() step, define what each layer is. In the forward() step,
         # define how the layers are connected.
         super(MMIModel, self).__init__()
         self.num_planet_features = num_planet_features
         self.num_stellar_features = num_stellar_features
+        self.feature_names = feature_names
         self.num_total_features = (num_planet_features + num_stellar_features)
         self.num_labels = num_labels
         self.dropout_prob = dropout_prob
         self.width = width
         self.loss = Loss()
+        self.plotting = plotting
+        self.iteration = 0
 
         self.planetContext = ContextRep(width, num_planet_features, num_stellar_features, num_labels, dropout_prob)
         self.indivPlanet = PlanetRep(num_planet_features, num_labels, dropout_prob)
+
+        self.plottedWeights = []
+        self.plottedBiases = []
+        self.netFig = None
 
     def forward(self, planetContextData, indivPlanetData, is_training=True, softmax_scale=0.0005):
         context_rep, context_weights, context_biases = self.planetContext(planetContextData)
@@ -30,10 +39,26 @@ class MMIModel(nn.Module):
         planet_rep, planet_weights, planet_biases = self.indivPlanet(indivPlanetData)
         #planet_weights is a list of numpy arrays: [ (2, 20), (20, 10), (10, 3) ]
         #planet_biases is a list of numpy arrays: [ (20), (10), (3) ]
-        
+
         if is_training:
             loss = self.loss(context_rep, planet_rep)
-            return loss
+
+            if self.plotting is True:
+                if self.iteration % 500 == 0:
+                    #self.plottedWeights, self.plottedBiases = plot_net(self.plottedWeights, planet_weights, planet_biases, net_name="planet representation",feature_names=self.feature_names,context_rep=False)
+                    self.netFig, self.plottedWeights, self.plottedBiases = plot_net(self.netFig,
+                                                                        self.plottedWeights, 
+                                                                        self.plottedBiases, 
+                                                                        context_weights, 
+                                                                        context_biases, 
+                                                                        net_name="context representation",
+                                                                        feature_names=self.feature_names,
+                                                                        context_rep=True,
+                                                                        context_width=2,
+                                                                        pause_time=0.01)
+
+            self.iteration += 1
+            return loss#, planet_weights, planet_biases, context_weights, context_biases
 
         else:
             future_max_probs, future_indices = planet_rep.max(1)
@@ -91,17 +116,13 @@ class ContextRep(nn.Module):
         # In the __init__() step, define what each layer is. In the forward() step,
         # define how the layers are connected.
         super(ContextRep, self).__init__()
-        #self.linear = nn.Linear(2 * width * num_planet_features, num_labels) #(in_features, out_features) 
-                                                                             # = (2width x numPlanetFeatures, numLabels)
-                                                                             # = e.g. (4x5, numLabels)
-                                                                             # = (20, numLabels)
         
         self.architecture = [2*width*(num_planet_features+num_stellar_features), 20, 10, num_labels]
         self.linear1 = nn.Linear(self.architecture[0],self.architecture[1])
         self.linear2 = nn.Linear(self.architecture[1],self.architecture[2])
         self.linear3 = nn.Linear(self.architecture[2],self.architecture[3])
         self.drop_layer = nn.Dropout(p=dropout_prob)
-        self.iteration = 0
+        #self.iteration = 0
         #self.linear1weights = np.zeros((2*width*(num_planet_features + num_stellar_features)*20))
         #self.linear1biases = np.zeros((20))
         self.layers = [self.linear1, self.linear2, self.linear3]
@@ -142,13 +163,13 @@ class PlanetRep(nn.Module):
         # In the __init__() step, define what each layer is. In the forward() step,
         # define how the layers are connected.
         super(PlanetRep, self).__init__()
-        #self.linear = nn.Linear(num_planet_features,num_labels) # e.g. (5, numLabels)
+
         self.architecture = [num_planet_features, 20, 10, num_labels]
         self.linear1 = nn.Linear(self.architecture[0], self.architecture[1])
         self.linear2 = nn.Linear(self.architecture[1], self.architecture[2])
         self.linear3 = nn.Linear(self.architecture[2], self.architecture[3])
         self.drop_layer = nn.Dropout(p=dropout_prob)
-        self.iteration = 0
+        #self.iteration = 0
         #self.linear1weights = np.zeros((num_planet_features*20))
         #self.linear1biases = np.zeros((20))
         self.layers = [self.linear1, self.linear2, self.linear3]

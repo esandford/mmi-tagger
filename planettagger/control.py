@@ -10,6 +10,8 @@ import pickle
 
 from datetime import timedelta
 
+from viz import plot_net
+
 def calculateEntropy(probs):
     x = np.multiply(probs,np.log(probs))
     entro = -1. * np.sum(x)
