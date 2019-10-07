@@ -19,7 +19,7 @@ def main(args):
     device = torch.device('cuda' if args.cuda else 'cpu')
     data = Data(args.num_planet_features, args.num_stellar_features, args.data, args.truth_known)
 
-    model = MMIModel(args.num_planet_features, args.num_stellar_features, args.num_labels, args.width, args.dropout_prob, feature_names, args.plotting).to(device)
+    model = MMIModel(args.num_planet_features, args.num_stellar_features, args.num_labels, args.width, args.dropout_prob, feature_names, args.plot, args.saveplot).to(device)
     logger = Logger(args.model + '.log', args.train)
     logger.log('python ' + ' '.join(sys.argv) + '\n')
     logger.log('Random seed: %d' % args.seed)
@@ -72,8 +72,9 @@ if __name__ == '__main__':
                         help='use CUDA?')
     parser.add_argument('--truth_known', action='store_true',
                         help='truth known?')
-    parser.add_argument('--plotting', action='store_true',
-                        help='plot?')
-
+    parser.add_argument('--plot', action='store_true',
+                        help='live plot weights?')
+    parser.add_argument('--saveplot', action='store_true',
+                        help='save plot of final weights?')
     args = parser.parse_args()
     main(args)

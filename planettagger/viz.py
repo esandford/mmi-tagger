@@ -10,7 +10,10 @@ from matplotlib import rcParams
 rcParams['font.family'] = 'serif'
 rcParams['font.sans-serif'] = ['Computer Modern Roman']
 
-def plot_net(fig, cb, plottedWeights, plottedBiases, weights, biases, net_name, feature_names, context_rep=False, context_width=None, pause_time=0.01):
+def plot_net(fig, cb, plottedWeights, plottedBiases,
+            weights, biases, net_name, feature_names,
+            context_rep=False, context_width=None,
+            pause_time=0.01,showplot=True,save=False,figname=None):
     """
     weights = a list of numpy arrays. each array contains the weights of 1 layer of the network
     Plot a Torch network, with network connections color-coded by weight.
@@ -42,6 +45,7 @@ def plot_net(fig, cb, plottedWeights, plottedBiases, weights, biases, net_name, 
     if plottedWeights == []:
         # this is the call to matplotlib that allows dynamic plotting
         plt.ion()
+
         fig, ax = plt.subplots(1, 1, figsize=(2*plotw/9., 7*ploth/9.),dpi=150)
         
         # Format the figure.
@@ -89,7 +93,7 @@ def plot_net(fig, cb, plottedWeights, plottedBiases, weights, biases, net_name, 
             if i == 0:
                 if context_rep is False: # i.e., if this is a single-planet representation
                     for j in range(len(neuron_y[0:-1])):
-                        ax.text(x=-0.07,y=neuron_y[j]-neuronh/3.,s=feature_names[j])
+                        ax.text(x=-0.07,y=neuron_y[j]-neuronh/3.,s=feature_names[j],fontsize=8)
                     ax.text(x=-0.09,y=neuron_y[-1]-neuronh/3.,s='bias',fontsize=8)
                     ax.set_xlim(-0.05,1.05)
                     ax.set_ylim(-0.05,1.05)
@@ -183,7 +187,11 @@ def plot_net(fig, cb, plottedWeights, plottedBiases, weights, biases, net_name, 
         cb = fig.colorbar(scalarMap, ax=ax, label="weight")
         ax.axis("off")
         ax.set_title(net_name)
-        plt.show()
+
+        if showplot is True:
+            plt.show()
+        else:
+            plt.close()
 
     else:
         cmin = 5.
@@ -229,6 +237,10 @@ def plot_net(fig, cb, plottedWeights, plottedBiases, weights, biases, net_name, 
         cb.draw_all()
         # this pauses the data so the figure/axis can catch up - the amount of pause can be altered above
         plt.pause(pause_time)
+
+    if save is True:
+        fig.savefig("{0}.png".format(figname),fmt="png",bbox_inches="tight")
+        plt.close()
     
     return fig, cb, plottedWeights, plottedBiases
 

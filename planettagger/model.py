@@ -3,12 +3,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import matplotlib.pyplot as plt
 
 from viz import plot_net
 
 class MMIModel(nn.Module):
 
-    def __init__(self, num_planet_features, num_stellar_features, num_labels, width, dropout_prob, feature_names, plotting):
+    def __init__(self, num_planet_features, num_stellar_features, num_labels, width, dropout_prob, feature_names, plot, saveplot):
         # In the __init__() step, define what each layer is. In the forward() step,
         # define how the layers are connected.
         super(MMIModel, self).__init__()
@@ -20,16 +21,22 @@ class MMIModel(nn.Module):
         self.dropout_prob = dropout_prob
         self.width = width
         self.loss = Loss()
-        self.plotting = plotting
+        self.plot = plot
+        self.saveplot = saveplot
         self.iteration = 0
 
         self.planetContext = ContextRep(width, num_planet_features, num_stellar_features, num_labels, dropout_prob)
         self.indivPlanet = PlanetRep(num_planet_features, num_labels, dropout_prob)
 
-        self.plottedWeights = []
-        self.plottedBiases = []
-        self.netFig = None
-        self.netcb = None
+        self.planet_plottedWeights = []
+        self.planet_plottedBiases = []
+        self.planet_fig = None
+        self.planet_cb = None
+
+        self.context_plottedWeights = []
+        self.context_plottedBiases = []
+        self.context_fig = None
+        self.context_cb = None
 
     def forward(self, planetContextData, indivPlanetData, is_training=True, softmax_scale=0.0005):
         context_rep, context_weights, context_biases = self.planetContext(planetContextData)
@@ -44,34 +51,69 @@ class MMIModel(nn.Module):
         if is_training:
             loss = self.loss(context_rep, planet_rep)
 
-            if self.plotting is True:
+            if self.plot is True:
                 if self.iteration % 500 == 0:
-                    """
-                    self.netFig, self.netcb, self.plottedWeights, self.plottedBiases = plot_net(self.netFig,
-                                                                        self.netcb,
-                                                                        self.plottedWeights, 
-                                                                        self.plottedBiases, 
+                    
+                    self.planet_fig, self.planet_cb, self.planet_plottedWeights, self.planet_plottedBiases = plot_net(self.planet_fig,
+                                                                        self.planet_cb,
+                                                                        self.planet_plottedWeights, 
+                                                                        self.planet_plottedBiases, 
                                                                         planet_weights, 
                                                                         planet_biases, 
                                                                         net_name="planet representation",
                                                                         feature_names=self.feature_names,
                                                                         context_rep=False,
-                                                                        pause_time=0.01)
-                    """
+                                                                        showplot=True,
+                                                                        pause_time=0.01,
+                                                                        save=False)
                     
-                    self.netFig, self.netcb, self.plottedWeights, self.plottedBiases = plot_net(self.netFig,
-                                                                        self.netcb,
-                                                                        self.plottedWeights, 
-                                                                        self.plottedBiases, 
+                    
+                    self.context_fig, self.context_cb, self.context_plottedWeights, self.context_plottedBiases = plot_net(self.context_fig,
+                                                                        self.context_cb,
+                                                                        self.context_plottedWeights, 
+                                                                        self.context_plottedBiases, 
                                                                         context_weights, 
                                                                         context_biases, 
                                                                         net_name="context representation",
                                                                         feature_names=self.feature_names,
                                                                         context_rep=True,
                                                                         context_width=2,
-                                                                        pause_time=0.01)
-                    
-
+                                                                        showplot=True,
+                                                                        pause_time=0.01,
+                                                                        save=False)
+            
+            if self.saveplot is True:
+                if self.iteration % 500 == 0:
+                    self.planet_fig, self.planet_cb, self.planet_plottedWeights, self.planet_plottedBiases = plot_net(self.planet_fig,
+                                                                            self.planet_cb,
+                                                                            self.planet_plottedWeights, 
+                                                                            self.planet_plottedBiases, 
+                                                                            planet_weights, 
+                                                                            planet_biases, 
+                                                                            net_name="planet representation",
+                                                                            feature_names=self.feature_names,
+                                                                            context_rep=False,
+                                                                            pause_time=0.01,
+                                                                            showplot=False,
+                                                                            save=True,
+                                                                            figname="./simulatedPlanets/oneGrammar_distinctRp/fake_grammaticalSystems_allFeatures_uniformP_planetWeights")
+                                
+                                
+                    self.context_fig, self.context_cb, self.context_plottedWeights, self.context_plottedBiases = plot_net(self.context_fig,
+                                                                            self.context_cb,
+                                                                            self.context_plottedWeights, 
+                                                                            self.context_plottedBiases, 
+                                                                            context_weights, 
+                                                                            context_biases, 
+                                                                            net_name="context representation",
+                                                                            feature_names=self.feature_names,
+                                                                            context_rep=True,
+                                                                            context_width=2,
+                                                                            pause_time=0.01,
+                                                                            showplot=False,
+                                                                            save=True,
+                                                                            figname="./simulatedPlanets/oneGrammar_distinctRp/fake_grammaticalSystems_allFeatures_uniformP_contextWeights")
+            
             self.iteration += 1
             return loss#, planet_weights, planet_biases, context_weights, context_biases
 
