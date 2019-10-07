@@ -1,74 +1,16 @@
 from __future__ import division, print_function
 import numpy as np
-import random
-import torch
-import pickle
 
 import matplotlib.pyplot as plt
 
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
+from matplotlib import rcParams
 
-"""
-def live_plotter(x_vec,y1_data,line1,identifier='',pause_time=0.1):
-    if line1==[]:
-        # this is the call to matplotlib that allows dynamic plotting
-        plt.ion()
-        fig = plt.figure(figsize=(13,6))
-        ax = fig.add_subplot(111)
-        # create a variable for the line so we can later update it
-        line1, = ax.plot(x_vec,y1_data,'-o',alpha=0.8)        
-        #update plot label/title
-        plt.ylabel('Y Label')
-        plt.title('Title: {}'.format(identifier))
-        plt.show()
-    
-    # after the figure, axis, and line are created, we only need to update the y-data
-    line1.set_ydata(y1_data)
-    # adjust limits if new data goes beyond bounds
-    if np.min(y1_data)<=line1.axes.get_ylim()[0] or np.max(y1_data)>=line1.axes.get_ylim()[1]:
-        plt.ylim([np.min(y1_data)-np.std(y1_data),np.max(y1_data)+np.std(y1_data)])
-    # this pauses the data so the figure/axis can catch up - the amount of pause can be altered above
-    plt.pause(pause_time)
-    
-    # return line so we can update it again in the next iteration
-    return line1
+rcParams['font.family'] = 'serif'
+rcParams['font.sans-serif'] = ['Computer Modern Roman']
 
-# the function below is for updating both x and y values (great for updating dates on the x-axis)
-def live_plotter_xy(x_vec,y1_data,line1,identifier='',pause_time=0.01):
-    if line1==[]:
-        plt.ion()
-        fig = plt.figure(figsize=(13,6))
-        ax = fig.add_subplot(111)
-        line1, = ax.plot(x_vec,y1_data,'r-o',alpha=0.8)
-        plt.ylabel('Y Label')
-        plt.title('Title: {}'.format(identifier))
-        plt.show()
-        
-    line1.set_data(x_vec,y1_data)
-    plt.xlim(np.min(x_vec),np.max(x_vec))
-    if np.min(y1_data)<=line1.axes.get_ylim()[0] or np.max(y1_data)>=line1.axes.get_ylim()[1]:
-        plt.ylim([np.min(y1_data)-np.std(y1_data),np.max(y1_data)+np.std(y1_data)])
-
-    plt.pause(pause_time)
-    
-    return line1
-
-
-size = 100
-x_vec = np.linspace(0,1,size+1)[0:-1]
-y_vec = np.random.randn(len(x_vec))
-line1 = []
-while True:
-    rand_val = np.random.randn(1)
-    y_vec[-1] = rand_val
-    line1 = live_plotter(x_vec,y_vec,line1)
-    y_vec = np.append(y_vec[1:],0.0)
-
-"""
-
-
-def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feature_names, context_rep=False, context_width=None, pause_time=0.01):
+def plot_net(fig, cb, plottedWeights, plottedBiases, weights, biases, net_name, feature_names, context_rep=False, context_width=None, pause_time=0.01):
     """
     weights = a list of numpy arrays. each array contains the weights of 1 layer of the network
     Plot a Torch network, with network connections color-coded by weight.
@@ -84,7 +26,7 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
     #last layer:
     architecture.append(np.shape(weights[-1])[1])
     architecture = np.array((architecture))
-
+    #print(architecture)
     depth = len(architecture)
     width = np.max(architecture) + 1 #including bias node
 
@@ -100,7 +42,7 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
     if plottedWeights == []:
         # this is the call to matplotlib that allows dynamic plotting
         plt.ion()
-        fig, ax = plt.subplots(1, 1, figsize=(2*plotw/9., 5*ploth/9.),dpi=200)
+        fig, ax = plt.subplots(1, 1, figsize=(2*plotw/9., 7*ploth/9.),dpi=150)
         
         # Format the figure.
         lb = lbdim / ploth
@@ -148,7 +90,7 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
                 if context_rep is False: # i.e., if this is a single-planet representation
                     for j in range(len(neuron_y[0:-1])):
                         ax.text(x=-0.07,y=neuron_y[j]-neuronh/3.,s=feature_names[j])
-                    ax.text(x=-0.09,y=neuron_y[-1]-neuronh/3.,s='bias')
+                    ax.text(x=-0.09,y=neuron_y[-1]-neuronh/3.,s='bias',fontsize=8)
                     ax.set_xlim(-0.05,1.05)
                     ax.set_ylim(-0.05,1.05)
 
@@ -163,18 +105,18 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
 
                     for k in range(nUniqueFeatures):
                         for j in np.arange(k,len(neuron_y[0:-1]),nUniqueFeatures):
-                            ax.text(x=-0.55,y=neuron_y[j]-neuronh/3.,s="context planet {0}, {1}".format(contextPlanetLabels[int(np.floor(j/nUniqueFeatures))], feature_names[k]))
+                            ax.text(x=-0.55,y=neuron_y[j]-neuronh/3.,s="context planet {0}, {1}".format(contextPlanetLabels[int(np.floor(j/nUniqueFeatures))], feature_names[k]),fontsize=8)
 
-                    ax.text(x=-0.15,y=neuron_y[-1]-neuronh/3.,s='bias')
+                    ax.text(x=-0.15,y=neuron_y[-1]-neuronh/3.,s='bias',fontsize=8)
 
                     ax.set_xlim(-0.55,1.05)
                     ax.set_ylim(-0.05,1.05)
         #ax.axhline(0.5)
         
         #colormap details
-        cmin = -5.
-        cmax = 5.
-        """
+        cmin = 5.
+        cmax = -5.
+        
         for i in range(n_layers):
             ws = weights[i]
             bs = biases[i]
@@ -187,7 +129,7 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
                 cmin = np.min(bs)
             if np.max(bs) > cmax:
                 cmax = np.max(bs)
-        """
+        
         cm = plt.get_cmap('Spectral') 
         cNorm  = colors.Normalize(vmin=cmin, vmax=cmax)
         scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
@@ -210,10 +152,6 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
             plottedBiases_thisLayer = []
             
             #regular nodes
-            #print(np.shape(ws))
-            #print(int(np.shape(ws)[0]))
-            #print(int(np.shape(ws)[1]))
-
             for ii in range(0,int(np.shape(ws)[0])):
                 plottedWeights_thisLayer_thisNeuron = []
                 for jj in range(0,int(np.shape(ws)[1])):
@@ -235,7 +173,7 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
                 yStart = neuron_y[-1]
                 yEnd = neuron_yp1[ii]
 
-                pB = ax.plot(np.array((xStart,xEnd)),np.array((yStart,yEnd)), color=colorVal, ls='-',marker='None',lw=0.5)
+                pB = ax.plot(np.array((xStart,xEnd)),np.array((yStart,yEnd)), color=colorVal, ls='-',marker='None',lw=0.5,alpha=1)
                 plottedBiases_thisLayer.append(pB[0])
 
             plottedWeights.append(plottedWeights_thisLayer)
@@ -248,9 +186,9 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
         plt.show()
 
     else:
-        cmin = -5
-        cmax = 5.
-        """
+        cmin = 5.
+        cmax = -5.
+        
         for i in range(n_layers):
             ws = weights[i]
             bs = biases[i]
@@ -263,7 +201,7 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
                 cmin = np.min(bs)
             if np.max(bs) > cmax:
                 cmax = np.max(bs)
-        """
+        
         cm = plt.get_cmap('Spectral') 
         cNorm  = colors.Normalize(vmin=cmin, vmax=cmax)
         scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
@@ -287,10 +225,10 @@ def plot_net(fig, plottedWeights, plottedBiases, weights, biases, net_name, feat
 
         
         scalarMap.set_array(np.linspace(cmin,cmax,100))
-        #cb = fig.colorbar(scalarMap, ax=ax, label="weight")
-        
+        cb.set_clim(cmin,cmax)
+        cb.draw_all()
         # this pauses the data so the figure/axis can catch up - the amount of pause can be altered above
         plt.pause(pause_time)
     
-    return fig, plottedWeights, plottedBiases
+    return fig, cb, plottedWeights, plottedBiases
 

@@ -29,6 +29,7 @@ class MMIModel(nn.Module):
         self.plottedWeights = []
         self.plottedBiases = []
         self.netFig = None
+        self.netcb = None
 
     def forward(self, planetContextData, indivPlanetData, is_training=True, softmax_scale=0.0005):
         context_rep, context_weights, context_biases = self.planetContext(planetContextData)
@@ -45,7 +46,9 @@ class MMIModel(nn.Module):
 
             if self.plotting is True:
                 if self.iteration % 500 == 0:
-                    self.netFig, self.plottedWeights, self.plottedBiases = plot_net(self.netFig,
+                    """
+                    self.netFig, self.netcb, self.plottedWeights, self.plottedBiases = plot_net(self.netFig,
+                                                                        self.netcb,
                                                                         self.plottedWeights, 
                                                                         self.plottedBiases, 
                                                                         planet_weights, 
@@ -55,7 +58,9 @@ class MMIModel(nn.Module):
                                                                         context_rep=False,
                                                                         pause_time=0.01)
                     """
-                    self.netFig, self.plottedWeights, self.plottedBiases = plot_net(self.netFig,
+                    
+                    self.netFig, self.netcb, self.plottedWeights, self.plottedBiases = plot_net(self.netFig,
+                                                                        self.netcb,
                                                                         self.plottedWeights, 
                                                                         self.plottedBiases, 
                                                                         context_weights, 
@@ -65,7 +70,7 @@ class MMIModel(nn.Module):
                                                                         context_rep=True,
                                                                         context_width=2,
                                                                         pause_time=0.01)
-                    """
+                    
 
             self.iteration += 1
             return loss#, planet_weights, planet_biases, context_weights, context_biases
