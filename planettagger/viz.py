@@ -134,6 +134,7 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
             if np.max(bs) > cmax:
                 cmax = np.max(bs)
         
+        c_abs_max = np.max((np.abs(cmin),np.abs(cmax)))
         cm = plt.get_cmap('Spectral') 
         cNorm  = colors.Normalize(vmin=cmin, vmax=cmax)
         scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
@@ -162,6 +163,11 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
                     w = ws[ii,jj]
                     colorVal = scalarMap.to_rgba(w)
 
+                    walpha = np.abs(w)/c_abs_max
+                    colorVal = list(colorVal)
+                    colorVal[-1] = walpha
+                    colorVal = tuple(colorVal)
+
                     yStart = neuron_y[ii]
                     yEnd = neuron_yp1[jj]
 
@@ -172,12 +178,18 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
             #bias nodes
             for ii in range(0,len(bs)):
                 b = bs[ii]
-                colorVal = scalarMap.to_rgba(b)
 
+                colorVal = scalarMap.to_rgba(b)
+                
+                balpha = np.abs(b)/c_abs_max
+                colorVal = list(colorVal)
+                colorVal[-1] = balpha
+                colorVal = tuple(colorVal)
+                
                 yStart = neuron_y[-1]
                 yEnd = neuron_yp1[ii]
 
-                pB = ax.plot(np.array((xStart,xEnd)),np.array((yStart,yEnd)), color=colorVal, ls='-',marker='None',lw=0.5,alpha=1)
+                pB = ax.plot(np.array((xStart,xEnd)),np.array((yStart,yEnd)), color=colorVal, ls='-',marker='None',lw=0.5)
                 plottedBiases_thisLayer.append(pB[0])
 
             plottedWeights.append(plottedWeights_thisLayer)
@@ -210,6 +222,7 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
             if np.max(bs) > cmax:
                 cmax = np.max(bs)
         
+        c_abs_max = np.max((np.abs(cmin),np.abs(cmax)))
         cm = plt.get_cmap('Spectral') 
         cNorm  = colors.Normalize(vmin=cmin, vmax=cmax)
         scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
@@ -223,12 +236,24 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
                 for jj in range(0,int(np.shape(ws)[1])):
                     w = ws[ii,jj]
                     colorVal = scalarMap.to_rgba(w)
+
+                    walpha = np.abs(w)/c_abs_max
+                    colorVal = list(colorVal)
+                    colorVal[-1] = walpha
+                    colorVal = tuple(colorVal)
+
                     plottedWeights[i][ii][jj].set_color(colorVal)
             
             #bias nodes
             for ii in range(0,len(bs)):
                 b = bs[ii]
                 colorVal = scalarMap.to_rgba(b)
+
+                balpha = np.abs(b)/c_abs_max
+                colorVal = list(colorVal)
+                colorVal[-1] = balpha
+                colorVal = tuple(colorVal)
+
                 plottedBiases[i][ii].set_color(colorVal)
 
         

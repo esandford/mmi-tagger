@@ -53,7 +53,7 @@ class MMIModel(nn.Module):
 
             if self.plot is True:
                 if self.iteration % 500 == 0:
-                    
+                    """
                     self.planet_fig, self.planet_cb, self.planet_plottedWeights, self.planet_plottedBiases = plot_net(self.planet_fig,
                                                                         self.planet_cb,
                                                                         self.planet_plottedWeights, 
@@ -67,7 +67,7 @@ class MMIModel(nn.Module):
                                                                         pause_time=0.01,
                                                                         save=False)
                     
-                    
+                    """
                     self.context_fig, self.context_cb, self.context_plottedWeights, self.context_plottedBiases = plot_net(self.context_fig,
                                                                         self.context_cb,
                                                                         self.context_plottedWeights, 
@@ -81,7 +81,7 @@ class MMIModel(nn.Module):
                                                                         showplot=True,
                                                                         pause_time=0.01,
                                                                         save=False)
-            
+                    
             if self.saveplot is True:
                 if self.iteration % 500 == 0:
                     self.planet_fig, self.planet_cb, self.planet_plottedWeights, self.planet_plottedBiases = plot_net(self.planet_fig,
@@ -98,7 +98,7 @@ class MMIModel(nn.Module):
                                                                             save=True,
                                                                             figname="./simulatedPlanets/oneGrammar_distinctRp/fake_grammaticalSystems_allFeatures_uniformP_planetWeights")
                                 
-                                
+                              
                     self.context_fig, self.context_cb, self.context_plottedWeights, self.context_plottedBiases = plot_net(self.context_fig,
                                                                             self.context_cb,
                                                                             self.context_plottedWeights, 
