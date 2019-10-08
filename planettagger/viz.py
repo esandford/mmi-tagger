@@ -109,7 +109,7 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
 
                     for k in range(nUniqueFeatures):
                         for j in np.arange(k,len(neuron_y[0:-1]),nUniqueFeatures):
-                            ax.text(x=-0.55,y=neuron_y[j]-neuronh/3.,s="context planet {0}, {1}".format(contextPlanetLabels[int(np.floor(j/nUniqueFeatures))], feature_names[k]),fontsize=8)
+                            ax.text(x=-0.35,y=neuron_y[j]-neuronh/3.,s="context planet {0}, {1}".format(contextPlanetLabels[int(np.floor(j/nUniqueFeatures))], feature_names[k]),fontsize=8)
 
                     ax.text(x=-0.15,y=neuron_y[-1]-neuronh/3.,s='bias',fontsize=8)
 
@@ -201,6 +201,7 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
         ax.set_title(net_name)
 
         if showplot is True:
+            print("true")
             plt.show()
         else:
             plt.close()
