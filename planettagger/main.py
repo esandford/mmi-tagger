@@ -13,7 +13,8 @@ from model import MMIModel
 
 def main(args):
     feature_names = args.feature_names
-    feature_names = map(str, feature_names.strip('[]').split(','))
+    feature_names = list(map(str, feature_names.strip('[]').split(',')))
+    
     random.seed(args.seed)
     torch.manual_seed(args.seed)
     device = torch.device('cuda' if args.cuda else 'cpu')

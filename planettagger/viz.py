@@ -201,7 +201,6 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
         ax.set_title(net_name)
 
         if showplot is True:
-            print("true")
             plt.show()
         else:
             plt.close()
@@ -259,13 +258,14 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
 
         
         scalarMap.set_array(np.linspace(cmin,cmax,100))
-        cb.set_clim(cmin,cmax)
+        #cb.set_clim(cmin,cmax)
+        cb.mappable.set_clim(cmin,cmax)
         cb.draw_all()
         # this pauses the data so the figure/axis can catch up - the amount of pause can be altered above
         plt.pause(pause_time)
 
     if save is True:
-        fig.savefig("{0}.png".format(figname),fmt="png",bbox_inches="tight")
+        fig.savefig("{0}.pdf".format(figname),fmt="pdf",bbox_inches="tight")
         plt.close()
     
     return fig, cb, plottedWeights, plottedBiases
