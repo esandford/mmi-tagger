@@ -182,38 +182,30 @@ class ContextRep(nn.Module):
         # define how the layers are connected.
         super(ContextRep, self).__init__()
 
-        self.architecture = [2*width*(num_planet_features+num_stellar_features), 20, 10, num_labels]
-        self.architecture = [num_stellar_features + (2*width*num_planet_features), 20, 10, num_labels]
+        #self.architecture = [num_stellar_features + (2*width*num_planet_features), 20, 10, num_labels]
+        
+        #self.linear1 = nn.Linear(self.architecture[0],self.architecture[1])
+        #self.linear2 = nn.Linear(self.architecture[1],self.architecture[2])
+        #self.linear3 = nn.Linear(self.architecture[2],self.architecture[3])
+        #self.layers = [self.linear1, self.linear2, self.linear3]
+
+        self.architecture = [num_stellar_features + (2*width*num_planet_features), 100, num_labels]
         
         self.linear1 = nn.Linear(self.architecture[0],self.architecture[1])
         self.linear2 = nn.Linear(self.architecture[1],self.architecture[2])
-        self.linear3 = nn.Linear(self.architecture[2],self.architecture[3])
-        self.drop_layer = nn.Dropout(p=dropout_prob)
-        #self.iteration = 0
-        #self.linear1weights = np.zeros((2*width*(num_planet_features + num_stellar_features)*20))
-        #self.linear1biases = np.zeros((20))
-        self.layers = [self.linear1, self.linear2, self.linear3]
+        self.layers = [self.linear1, self.linear2]
 
+        self.drop_layer = nn.Dropout(p=dropout_prob)
+
+        
 
     def forward(self, contextPlanetData):
         #contextPlanets will be of the shape: Batchsize x 2width x numPlanetFeatures, e.g. shape (15, 4, 5)
         # self.linear1 wants to operate on something of shape (Batchsize, 2width*numPlanetFeatuers), e.g. (15, 20)
         rep = self.drop_layer(self.linear1(contextPlanetData.view(contextPlanetData.shape[0], -1)))  # returns Batchsize x numLabels
         rep = self.drop_layer(F.relu(self.linear2(rep)))
-        rep = self.drop_layer(F.relu(self.linear3(rep)))
-        
-        """
-        if self.iteration % 100 == 0:
-            weights = list(self.linear1.parameters())[0].data
-            biases = list(self.linear1.parameters())[1].data
+        #rep = self.drop_layer(F.relu(self.linear3(rep)))
 
-            self.linear1biases = np.vstack((self.linear1biases,biases))
-            self.linear1weights = np.vstack((self.linear1weights,np.ravel(weights)))
-            np.save("./ContextRep_linear1biases.npy",self.linear1biases)
-            np.save("./ContextRep_linear1weights.npy",self.linear1weights)
-
-        self.iteration += 1
-        """
         weights = []
         biases = []
 
@@ -231,34 +223,26 @@ class PlanetRep(nn.Module):
         # define how the layers are connected.
         super(PlanetRep, self).__init__()
 
-        self.architecture = [num_planet_features, 20, 10, num_labels]
+        #self.architecture = [num_planet_features, 20, 10, num_labels]
+        #self.linear1 = nn.Linear(self.architecture[0], self.architecture[1])
+        #self.linear2 = nn.Linear(self.architecture[1], self.architecture[2])
+        #self.linear3 = nn.Linear(self.architecture[2], self.architecture[3])
+        #self.layers = [self.linear1, self.linear2, self.linear3]
+        
+        self.architecture = [num_planet_features, 100, num_labels]
         self.linear1 = nn.Linear(self.architecture[0], self.architecture[1])
         self.linear2 = nn.Linear(self.architecture[1], self.architecture[2])
-        self.linear3 = nn.Linear(self.architecture[2], self.architecture[3])
+        self.layers = [self.linear1, self.linear2]
+        
         self.drop_layer = nn.Dropout(p=dropout_prob)
-        #self.iteration = 0
-        #self.linear1weights = np.zeros((num_planet_features*20))
-        #self.linear1biases = np.zeros((20))
-        self.layers = [self.linear1, self.linear2, self.linear3]
 
     def forward(self, indivPlanetData):
         #self.linear wants to operate on something of shape (Batchsize, num_planet_features)
         #rep = self.linear(indivPlanetData.view(indivPlanetData.shape[0],-1))  # B x num_labels
         rep = self.drop_layer(self.linear1(indivPlanetData)) #shape Batchsize x num_labels
         rep = self.drop_layer(F.relu(self.linear2(rep)))
-        rep = self.drop_layer(F.relu(self.linear3(rep)))
-        """
-        if self.iteration % 100 == 0:
-            weights = list(self.linear1.parameters())[0].data
-            biases = list(self.linear1.parameters())[1].data
-            self.linear1biases = np.vstack((self.linear1biases,biases))
-            self.linear1weights = np.vstack((self.linear1weights,np.ravel(weights)))
-
-            np.save("./PlanetRep_linear1biases.npy",self.linear1biases)
-            np.save("./PlanetRep_linear1weights.npy",self.linear1weights)
-
-        self.iteration += 1
-        """
+        #rep = self.drop_layer(F.relu(self.linear3(rep)))
+        
         weights = []
         biases = []
 
