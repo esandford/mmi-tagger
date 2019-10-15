@@ -33,7 +33,7 @@ class Data(object):
         #wcount = Counter()
         #ccount = Counter()
         def add(p):
-            # "p" is a list: [Teff, logg, [Fe/H], Rp/R*, P]
+            # "p" is a list: [Rp/R*, P, Teff, logg, [Fe/H]]
             if tuple(p) not in self.planet2i:
                 self.i2planet.append(p)
                 self.planet2i[tuple(p)] = len(self.i2planet) - 1
@@ -76,21 +76,37 @@ class Data(object):
 
     def tensorize_batch(self, batch, device, width, truth_known):
         def get_context(i, j, width, truth_known):
+            # stop repeating stellar features!
+            thisPlanet = self.systems[i][j]
+            thisPlanet = self.i2planet[thisPlanet]
+            
+            thisStellar = list(thisPlanet[self.num_planet_features:])
+            
+
             left = [0 for _ in range(width - j)] + \
                    self.systems[i][max(0, j - width):j]
             right = self.systems[i][j + 1: min(len(self.systems[i]), j + width) + 1] + \
                     [0 for _ in range((j + width) - len(self.systems[i]) + 1)]
 
-            left = [self.i2planet[k] for k in left]
-            right = [self.i2planet[k] for k in right]
+            left = [self.i2planet[k][0:self.num_planet_features] for k in left]
+            right = [self.i2planet[k][0:self.num_planet_features] for k in right]
+            
+            for ii in range(len(left)):
+                for jj in range(len(left[ii])):
+                    thisStellar.append(left[ii][jj])
 
+            for ii in range(len(right)):
+                for jj in range(len(right[ii])):
+                    thisStellar.append(right[ii][jj])
+            
             if truth_known:
                 leftTruth = [0 for _ in range(width - j)] + \
                             self.truths[i][max(0, j - width):j]
                 rightTruth = [0 for _ in range((j + width) - len(self.truths[i]) + 1)] + \
                             self.truths[i][j + 1: min(len(self.truths[i]), j + width) + 1]
 
-                return left + right, leftTruth + rightTruth
+                thisStellar.extend
+                return thisStellar, leftTruth + rightTruth
 
             # below for POS tagging example, but analogous for planets, except that each "planet" 
             #   is an array of data rather than an index to a word:
@@ -101,7 +117,7 @@ class Data(object):
             # if e.g. i==0, j==4, width=2 (referring to sentence "the dog chased the cat", word "cat"):
             #    left = [4,2] (signifying "chased the"); right = [0,0] (signifying "<pad> <pad>")
             else:
-                return left + right
+                return thisStellar
 
 
         targetIdxs = [self.systems[i][j] for (i, j) in batch]        # list of individual words to make up Y
@@ -111,17 +127,19 @@ class Data(object):
         targets = [self.i2planet[k][0:self.num_planet_features] for k in targetIdxs]
 
         if truth_known:
-            contexts = [get_context(i, j, width, truth_known)[0] for (i, j) in batch]
-            contextTruths = [get_context(i, j, width, truth_known)[1] for (i, j) in batch]
             targetTruths = [self.truths[i][j] for (i, j) in batch]
+            contextTruths = [get_context(i, j, width, truth_known)[1] for (i, j) in batch]
+            contexts = [get_context(i, j, width, truth_known)[0] for (i, j) in batch]
+            
         else:
-            contexts = [get_context(i, j, width, truth_known) for (i, j) in batch] # list of [left,right]s to make up X
-            contextTruths = None
             targetTruths = None
+            contextTruths = None
+
+            contexts = [get_context(i, j, width, truth_known) for (i, j) in batch] # list of [left,right]s to make up X
 
         #print(self.systems)
         
-        X = torch.FloatTensor(contexts).to(device)  # B x 2width x (num_planet_features + num_stellar_features), where B = batch size = 15 for basic example
+        X = torch.FloatTensor(contexts).to(device)  # B x (num_stellar_features + (2width x num_planet_features)), where B = batch size = 15 for basic example
         Y1 = torch.FloatTensor(targets).to(device)  # B x (num_planet_features + num_stellar_features)
 
         #print(X[0:10])

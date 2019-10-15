@@ -61,6 +61,8 @@ class MMIModel(nn.Module):
                                                                         planet_weights, 
                                                                         planet_biases, 
                                                                         net_name="planet representation",
+                                                                        n_planet_features=self.num_planet_features,
+                                                                        n_stellar_features=self.num_stellar_features,
                                                                         feature_names=self.feature_names,
                                                                         context_rep=False,
                                                                         showplot=True,
@@ -75,6 +77,8 @@ class MMIModel(nn.Module):
                                                                         context_weights, 
                                                                         context_biases, 
                                                                         net_name="context representation",
+                                                                        n_planet_features=self.num_planet_features,
+                                                                        n_stellar_features=self.num_stellar_features,
                                                                         feature_names=self.feature_names,
                                                                         context_rep=True,
                                                                         context_width=2,
@@ -91,6 +95,8 @@ class MMIModel(nn.Module):
                                                                             planet_weights, 
                                                                             planet_biases, 
                                                                             net_name="planet representation",
+                                                                            n_planet_features=self.num_planet_features,
+                                                                            n_stellar_features=self.num_stellar_features,
                                                                             feature_names=self.feature_names,
                                                                             context_rep=False,
                                                                             pause_time=0.01,
@@ -106,6 +112,8 @@ class MMIModel(nn.Module):
                                                                             context_weights, 
                                                                             context_biases, 
                                                                             net_name="context representation",
+                                                                            n_planet_features=self.num_planet_features,
+                                                                            n_stellar_features=self.num_stellar_features,
                                                                             feature_names=self.feature_names,
                                                                             context_rep=True,
                                                                             context_width=2,
@@ -173,8 +181,10 @@ class ContextRep(nn.Module):
         # In the __init__() step, define what each layer is. In the forward() step,
         # define how the layers are connected.
         super(ContextRep, self).__init__()
-        
+
         self.architecture = [2*width*(num_planet_features+num_stellar_features), 20, 10, num_labels]
+        self.architecture = [num_stellar_features + (2*width*num_planet_features), 20, 10, num_labels]
+        
         self.linear1 = nn.Linear(self.architecture[0],self.architecture[1])
         self.linear2 = nn.Linear(self.architecture[1],self.architecture[2])
         self.linear3 = nn.Linear(self.architecture[2],self.architecture[3])

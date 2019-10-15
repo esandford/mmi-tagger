@@ -11,7 +11,10 @@ rcParams['font.family'] = 'serif'
 rcParams['font.sans-serif'] = ['Computer Modern Roman']
 
 def plot_net(fig, cb, plottedWeights, plottedBiases,
-            weights, biases, net_name, feature_names,
+            weights, biases, net_name, 
+            n_planet_features,
+            n_stellar_features,
+            feature_names,
             context_rep=False, context_width=None,
             pause_time=0.01,showplot=True,save=False,figname=None):
     """
@@ -99,7 +102,6 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
                     ax.set_ylim(-0.05,1.05)
 
                 elif context_rep is True:
-                    nUniqueFeatures = int(len(neuron_y[0:-1])/(2*context_width))
                     
                     contextPlanetLabels = []
                     for l in range(-1*context_width,0):
@@ -107,9 +109,14 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
                     for l in range(1,context_width+1):
                         contextPlanetLabels.append("+"+str(l))
 
-                    for k in range(nUniqueFeatures):
-                        for j in np.arange(k,len(neuron_y[0:-1]),nUniqueFeatures):
-                            ax.text(x=-0.35,y=neuron_y[j]-neuronh/3.,s="context planet {0}, {1}".format(contextPlanetLabels[int(np.floor(j/nUniqueFeatures))], feature_names[k]),fontsize=8)
+                    for k in range(n_stellar_features):
+                        ax.text(x=-0.35,y=neuron_y[k]-neuronh/3.,s="{0}".format(feature_names[n_planet_features+k]),fontsize=8)
+
+
+                    for k in range(n_planet_features):
+                        for j in np.arange(k,len(neuron_y[n_stellar_features:-1]),n_planet_features):
+                            #print(j)
+                            ax.text(x=-0.35,y=neuron_y[j+n_stellar_features]-neuronh/3.,s="context planet {0}, {1}".format(contextPlanetLabels[int(np.floor(j/n_planet_features))], feature_names[k]),fontsize=8)
 
                     ax.text(x=-0.15,y=neuron_y[-1]-neuronh/3.,s='bias',fontsize=8)
 
@@ -258,7 +265,6 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
 
         
         scalarMap.set_array(np.linspace(cmin,cmax,100))
-        #cb.set_clim(cmin,cmax)
         cb.mappable.set_clim(cmin,cmax)
         cb.draw_all()
         # this pauses the data so the figure/axis can catch up - the amount of pause can be altered above
