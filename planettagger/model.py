@@ -1,9 +1,7 @@
-from __future__ import division, print_function
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-import matplotlib.pyplot as plt
 
 from viz import plot_net
 
@@ -128,7 +126,7 @@ class MMIModel(nn.Module):
         else:
             future_max_probs, future_indices = planet_rep.max(1)
             future_max_context_probs, future_context_indices = context_rep.max(1)
-            return F.softmax(softmax_scale*planet_rep, dim=1), future_max_probs, future_indices, F.softmax(softmax_scale*context_rep, dim=1), future_max_context_probs, future_context_indices
+            return F.softmax(softmax_scale*planet_rep, dim=1), future_max_probs, future_indices, F.log_softmax(softmax_scale*context_rep, dim=1), future_max_context_probs, future_context_indices
 
 
 class Loss(nn.Module):
@@ -138,29 +136,20 @@ class Loss(nn.Module):
         self.entropy = Entropy()
 
     def forward(self, planetContextRep, indivPlanetRep,softmax_scale=1.):# ,softmax_scale=0.0005):
-        #print("indivPlanetRep shape is {0}".format(indivPlanetRep.shape))      # Batchsize x num_labels
-        #print("planetContextRep shape is {0}".format(planetContextRep.shape))  # Batchsize x num_labels
-        #print("softmax_scale is {0}".format(softmax_scale))
+        #indivPlanetRep is Batchsize x num_labels
+        #planetContextRep is Batchsize x num_labels
         pZ_Y = F.softmax(softmax_scale*indivPlanetRep, dim=1) # B x num_labels
-        #print(pZ_Y.shape)
-        #print(type(pZ_Y))
-        #print(pZ_Y)
-        pZ = pZ_Y.mean(0) # num_labels
-        #print(pZ.shape)
-        #print("pZ shape is {0}".format(pZ.shape))
-        hZ = self.entropy(pZ) # scalar
-        #print("hZ shape is {0}".format(hZ.shape))
 
-        #print("pZ_Y shape is {0}".format(pZ_Y.shape))
-        #print("log_softmax shape is {0}".format(F.log_softmax(softmax_scale*planetContextRep, dim=1).shape))
+        pZ = pZ_Y.mean(0) # num_labels
+
+        hZ = self.entropy(pZ) # scalar
+
         x = pZ_Y * F.log_softmax(softmax_scale*planetContextRep, dim=1)  # B x num_labels * B x num_labels (elementwise multiplication)
-        #print("x shape is {0}".format(x.shape))
-        #print("x is {0}".format(x))
+
         hZ_X_ub = -1.0 * x.sum(dim=1).mean() # scalar
-        #print("hZ_X_ub shape is {0}".format(hZ_X_ub.shape))
 
         loss = hZ_X_ub - hZ
-        #print("loss is {0}".format(loss))
+
         return loss
 
 class Entropy(nn.Module):

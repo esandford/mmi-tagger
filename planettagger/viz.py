@@ -1,8 +1,5 @@
-from __future__ import division, print_function
 import numpy as np
-
 import matplotlib.pyplot as plt
-
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
 from matplotlib import rcParams

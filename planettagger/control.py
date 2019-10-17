@@ -1,4 +1,3 @@
-from __future__ import division, print_function
 import data
 import math
 import random
@@ -118,11 +117,9 @@ class Control(nn.Module):
 
     def do_epoch(self, data, optimizer):
         self.model.train()
-        #print(self.model)
         avg_loss = 0
         epoch_start_time = time.time()
         batches = data.get_batches(self.batch_size)
-        #print(batches)
         #print(type(batches)) #list, each element of which is 1 batch 
         for batch in batches:
             self.model.zero_grad()
@@ -130,7 +127,7 @@ class Control(nn.Module):
             #print("X shape is {0}".format(X.shape))    # Batchsize x 2width x (num_planet_features + num_stellar_features)
             #print("Y1 shape is {0}".format(Y1.shape))  # Batchsize x (num_planet_features + num_stellar_features)
             loss = self.model(X, Y1, is_training=True) # runs MMIModel.forward(X, Y1, is_training=True)
-            #print("loss is {0}".format(loss))
+
             avg_loss += loss.item() / len(batches)
             loss.backward()
             optimizer.step()
@@ -153,22 +150,16 @@ class Control(nn.Module):
         with torch.no_grad():
             for batch in batches:
                 X, Y1, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
-                #print(type(Y1))
-                #print(Y1.shape)
-                #print(type(data.targetIdxs))
-                #print(len(data.targetIdxs))
+
                 if self.truth_known:
                     truth_loss = calculateLoss(targetTruths,data_path)
-                    #print("loss is {0}".format(loss))
                     avg_truth_loss += truth_loss / len(batches)
-
 
                 future_probs, future_max_probs, future_indices, future_context_probs, future_max_context_probs, future_context_indices = self.model(X, Y1, is_training=False)
                 all_future_probs = np.vstack((all_future_probs,future_probs.numpy()))
                 all_idxs = np.vstack((all_idxs,np.atleast_2d(np.array(data.targetIdxs)).T))
 
                 all_future_context_probs = np.vstack((all_future_context_probs,future_context_probs.numpy()))
-                #all_context_idxs = np.vstack((all_context_idxs,np.atleast_2d(np.array(data.targetIdxs)).T))
                 
                 for k, (i, j) in enumerate(batch):
                     z = future_indices[k].max()
@@ -179,10 +170,9 @@ class Control(nn.Module):
         all_future_context_probs = all_future_context_probs[1:]
         all_idxs = all_idxs[1:].astype(int)
         all_idxs = all_idxs[:,0] - 1 # 1-indexing to 0-indexing
-        #all_future_probs = all_future_probs[all_idxs]
 
-        np.save("./{0}_classprobs.npy".format(data_path[:-4]),all_future_probs)
-        np.save("./{0}_classprobs_fromcontext.npy".format(data_path[:-4]),all_future_context_probs)
+        np.save("./{0}_classprobs_softmax.npy".format(data_path[:-4]),all_future_probs)
+        np.save("./{0}_classprobs_fromcontext_logsoftmax.npy".format(data_path[:-4]),all_future_context_probs)
         np.save("./{0}_idxs.npy".format(data_path[:-4]),all_idxs)
         np.save("./{0}_optimalLoss.npy".format(data_path[:-4]),avg_truth_loss)
         
