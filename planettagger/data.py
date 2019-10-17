@@ -75,7 +75,7 @@ class Data(object):
         return batches
 
     def tensorize_batch(self, batch, device, width, truth_known):
-        def get_context(i, j, width, truth_known):
+        def get_context(i, j, width):
             # stop repeating stellar features!
             thisPlanet = self.systems[i][j]
             thisPlanet = self.i2planet[thisPlanet]
@@ -99,15 +99,6 @@ class Data(object):
                 for jj in range(len(right[ii])):
                     thisStellar.append(right[ii][jj])
             
-            if truth_known:
-                leftTruth = [0 for _ in range(width - j)] + \
-                            self.truths[i][max(0, j - width):j]
-                rightTruth = [0 for _ in range((j + width) - len(self.truths[i]) + 1)] + \
-                            self.truths[i][j + 1: min(len(self.truths[i]), j + width) + 1]
-
-                thisStellar.extend
-                return thisStellar, leftTruth + rightTruth
-
             # below for POS tagging example, but analogous for planets, except that each "planet" 
             #   is an array of data rather than an index to a word:
             # if e.g. i==0, j==2, width=2 (referring to sentence "the dog chased the cat", word "chased"): 
@@ -116,8 +107,7 @@ class Data(object):
             #    left = [0,0] (signifying "<pad> <pad>"); right = [3,4] (signifying "dog chased")
             # if e.g. i==0, j==4, width=2 (referring to sentence "the dog chased the cat", word "cat"):
             #    left = [4,2] (signifying "chased the"); right = [0,0] (signifying "<pad> <pad>")
-            else:
-                return thisStellar
+            return thisStellar
 
 
         targetIdxs = [self.systems[i][j] for (i, j) in batch]        # list of individual words to make up Y
@@ -128,20 +118,13 @@ class Data(object):
 
         if truth_known:
             targetTruths = [self.truths[i][j] for (i, j) in batch]
-            contextTruths = [get_context(i, j, width, truth_known)[1] for (i, j) in batch]
-            contexts = [get_context(i, j, width, truth_known)[0] for (i, j) in batch]
+            contexts = [get_context(i, j, width) for (i, j) in batch]
             
         else:
             targetTruths = None
-            contextTruths = None
-
-            contexts = [get_context(i, j, width, truth_known) for (i, j) in batch] # list of [left,right]s to make up X
-
-        #print(self.systems)
+            contexts = [get_context(i, j, width) for (i, j) in batch] # list of [left,right]s to make up X
         
         X = torch.FloatTensor(contexts).to(device)  # B x (num_stellar_features + (2width x num_planet_features)), where B = batch size = 15 for basic example
         Y1 = torch.FloatTensor(targets).to(device)  # B x (num_planet_features + num_stellar_features)
 
-        #print(X[0:10])
-        #print(Y1[0:10])
-        return X, Y1, contextTruths, targetTruths
+        return X, Y1, targetTruths

@@ -38,7 +38,7 @@ class MMIModel(nn.Module):
         self.context_fig = None
         self.context_cb = None
 
-    def forward(self, planetContextData, indivPlanetData, is_training=True, softmax_scale=0.0005):
+    def forward(self, planetContextData, indivPlanetData, is_training=True,softmax_scale=1): #softmax_scale=0.0005):
         context_rep, context_weights, context_biases = self.planetContext(planetContextData)
         
         #context_weights is a list of numpy arrays: [ (8, 20), (20, 10), (10, 3) ]
@@ -102,7 +102,7 @@ class MMIModel(nn.Module):
                                                                             pause_time=0.01,
                                                                             showplot=False,
                                                                             save=True,
-                                                                            figname="./simulatedPlanets/oneGrammar_distinctRp/fake_grammaticalSystems_allFeatures_uniformP_planetWeights")
+                                                                            figname="./simulatedPlanets/oneGrammar_distinctRp/fake_grammaticalSystems_allFeatures_uniformP_wide_planetWeights")
                                 
                               
                     self.context_fig, self.context_cb, self.context_plottedWeights, self.context_plottedBiases = plot_net(self.context_fig,
@@ -120,14 +120,15 @@ class MMIModel(nn.Module):
                                                                             pause_time=0.01,
                                                                             showplot=False,
                                                                             save=True,
-                                                                            figname="./simulatedPlanets/oneGrammar_distinctRp/fake_grammaticalSystems_allFeatures_uniformP_contextWeights")
+                                                                            figname="./simulatedPlanets/oneGrammar_distinctRp/fake_grammaticalSystems_allFeatures_uniformP_wide_contextWeights")
             
             self.iteration += 1
             return loss#, planet_weights, planet_biases, context_weights, context_biases
 
         else:
             future_max_probs, future_indices = planet_rep.max(1)
-            return F.softmax(softmax_scale*planet_rep, dim=1), future_max_probs, future_indices
+            future_max_context_probs, future_context_indices = context_rep.max(1)
+            return F.softmax(softmax_scale*planet_rep, dim=1), future_max_probs, future_indices, F.softmax(softmax_scale*context_rep, dim=1), future_max_context_probs, future_context_indices
 
 
 class Loss(nn.Module):
@@ -136,7 +137,7 @@ class Loss(nn.Module):
         super(Loss, self).__init__()
         self.entropy = Entropy()
 
-    def forward(self, planetContextRep, indivPlanetRep, softmax_scale=0.0005):
+    def forward(self, planetContextRep, indivPlanetRep,softmax_scale=1.):# ,softmax_scale=0.0005):
         #print("indivPlanetRep shape is {0}".format(indivPlanetRep.shape))      # Batchsize x num_labels
         #print("planetContextRep shape is {0}".format(planetContextRep.shape))  # Batchsize x num_labels
         #print("softmax_scale is {0}".format(softmax_scale))
@@ -182,18 +183,12 @@ class ContextRep(nn.Module):
         # define how the layers are connected.
         super(ContextRep, self).__init__()
 
-        #self.architecture = [num_stellar_features + (2*width*num_planet_features), 20, 10, num_labels]
-        
-        #self.linear1 = nn.Linear(self.architecture[0],self.architecture[1])
-        #self.linear2 = nn.Linear(self.architecture[1],self.architecture[2])
-        #self.linear3 = nn.Linear(self.architecture[2],self.architecture[3])
-        #self.layers = [self.linear1, self.linear2, self.linear3]
-
-        self.architecture = [num_stellar_features + (2*width*num_planet_features), 100, num_labels]
+        self.architecture = [num_stellar_features + (2*width*num_planet_features), 20, 10, num_labels]
         
         self.linear1 = nn.Linear(self.architecture[0],self.architecture[1])
         self.linear2 = nn.Linear(self.architecture[1],self.architecture[2])
-        self.layers = [self.linear1, self.linear2]
+        self.linear3 = nn.Linear(self.architecture[2],self.architecture[3])
+        self.layers = [self.linear1, self.linear2, self.linear3]
 
         self.drop_layer = nn.Dropout(p=dropout_prob)
 
@@ -204,7 +199,7 @@ class ContextRep(nn.Module):
         # self.linear1 wants to operate on something of shape (Batchsize, 2width*numPlanetFeatuers), e.g. (15, 20)
         rep = self.drop_layer(self.linear1(contextPlanetData.view(contextPlanetData.shape[0], -1)))  # returns Batchsize x numLabels
         rep = self.drop_layer(F.relu(self.linear2(rep)))
-        #rep = self.drop_layer(F.relu(self.linear3(rep)))
+        rep = self.drop_layer(F.relu(self.linear3(rep)))
 
         weights = []
         biases = []
@@ -223,16 +218,11 @@ class PlanetRep(nn.Module):
         # define how the layers are connected.
         super(PlanetRep, self).__init__()
 
-        #self.architecture = [num_planet_features, 20, 10, num_labels]
-        #self.linear1 = nn.Linear(self.architecture[0], self.architecture[1])
-        #self.linear2 = nn.Linear(self.architecture[1], self.architecture[2])
-        #self.linear3 = nn.Linear(self.architecture[2], self.architecture[3])
-        #self.layers = [self.linear1, self.linear2, self.linear3]
-        
-        self.architecture = [num_planet_features, 100, num_labels]
+        self.architecture = [num_planet_features, 20, 10, num_labels]
         self.linear1 = nn.Linear(self.architecture[0], self.architecture[1])
         self.linear2 = nn.Linear(self.architecture[1], self.architecture[2])
-        self.layers = [self.linear1, self.linear2]
+        self.linear3 = nn.Linear(self.architecture[2], self.architecture[3])
+        self.layers = [self.linear1, self.linear2, self.linear3]
         
         self.drop_layer = nn.Dropout(p=dropout_prob)
 
@@ -241,7 +231,7 @@ class PlanetRep(nn.Module):
         #rep = self.linear(indivPlanetData.view(indivPlanetData.shape[0],-1))  # B x num_labels
         rep = self.drop_layer(self.linear1(indivPlanetData)) #shape Batchsize x num_labels
         rep = self.drop_layer(F.relu(self.linear2(rep)))
-        #rep = self.drop_layer(F.relu(self.linear3(rep)))
+        rep = self.drop_layer(F.relu(self.linear3(rep)))
         
         weights = []
         biases = []

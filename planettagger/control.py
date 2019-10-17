@@ -22,10 +22,6 @@ def calculateLoss(targetTruths,data_path):
     Calculate the loss function if everything were labeled correctly, i.e. the "goal"
     loss function.
 
-    #contextTruths = length Batchsize list, each entry of which is a list of length 2*width
-    #                each sublist has entries of values between 0....(nClasses - 1)
-    #                corresponding to the true class membership of that context planet.
-    
     targetTruths = length Batchsize list, each entry of which is a value between 0...(nclasses-1)
                    corresponding tot he true class membership of that target planet.
     """
@@ -130,7 +126,7 @@ class Control(nn.Module):
         #print(type(batches)) #list, each element of which is 1 batch 
         for batch in batches:
             self.model.zero_grad()
-            X, Y1, contextTruths, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
+            X, Y1, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
             #print("X shape is {0}".format(X.shape))    # Batchsize x 2width x (num_planet_features + num_stellar_features)
             #print("Y1 shape is {0}".format(Y1.shape))  # Batchsize x (num_planet_features + num_stellar_features)
             loss = self.model(X, Y1, is_training=True) # runs MMIModel.forward(X, Y1, is_training=True)
@@ -150,11 +146,13 @@ class Control(nn.Module):
         clustering = [{} for z in range(self.model.num_labels)]
 
         all_future_probs = np.zeros((1,self.model.num_labels))
+        all_future_context_probs = np.zeros((1,self.model.num_labels))
         all_idxs = np.zeros((1,1))
+        all_context_idxs = np.zeros((1,1))
         avg_truth_loss = 0.
         with torch.no_grad():
             for batch in batches:
-                X, Y1, contextTruths, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
+                X, Y1, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
                 #print(type(Y1))
                 #print(Y1.shape)
                 #print(type(data.targetIdxs))
@@ -165,20 +163,26 @@ class Control(nn.Module):
                     avg_truth_loss += truth_loss / len(batches)
 
 
-                future_probs, future_max_probs, future_indices = self.model(X, Y1, is_training=False)
+                future_probs, future_max_probs, future_indices, future_context_probs, future_max_context_probs, future_context_indices = self.model(X, Y1, is_training=False)
                 all_future_probs = np.vstack((all_future_probs,future_probs.numpy()))
                 all_idxs = np.vstack((all_idxs,np.atleast_2d(np.array(data.targetIdxs)).T))
+
+                all_future_context_probs = np.vstack((all_future_context_probs,future_context_probs.numpy()))
+                #all_context_idxs = np.vstack((all_context_idxs,np.atleast_2d(np.array(data.targetIdxs)).T))
+                
                 for k, (i, j) in enumerate(batch):
                     z = future_indices[k].max()
                     zseqs[i][j] = z
                     clustering[z][data.systems[i][j]] = True
 
         all_future_probs = all_future_probs[1:]
+        all_future_context_probs = all_future_context_probs[1:]
         all_idxs = all_idxs[1:].astype(int)
         all_idxs = all_idxs[:,0] - 1 # 1-indexing to 0-indexing
         #all_future_probs = all_future_probs[all_idxs]
 
         np.save("./{0}_classprobs.npy".format(data_path[:-4]),all_future_probs)
+        np.save("./{0}_classprobs_fromcontext.npy".format(data_path[:-4]),all_future_context_probs)
         np.save("./{0}_idxs.npy".format(data_path[:-4]),all_idxs)
         np.save("./{0}_optimalLoss.npy".format(data_path[:-4]),avg_truth_loss)
         
