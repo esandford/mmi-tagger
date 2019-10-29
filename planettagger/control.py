@@ -31,20 +31,26 @@ def calculateLoss(targetTruths,data_path):
     #make an array of class probabilities for the target planets
     #e.g. if there are classes 0,1,2 and planet i is of class 0, the ith 
     # row in the array should be [1 0 0]
-    pZ_Y = np.zeros((B,nClasses))
+    pZ_Y_ideal_softmax = np.zeros((B,nClasses))
+    pZ_Y_ideal_logsoftmax = 0.00001*np.ones((B,nClasses))
 
     for i in range(B):
         trueClass_i = int(targetTruths[i][0])
-        pZ_Y[i][trueClass_i] = 1
+        pZ_Y_ideal_softmax[i][trueClass_i] = 1.
+        pZ_Y_ideal_logsoftmax[i][trueClass_i] = 1. - 2.*0.00001
 
-    pZ = np.mean(pZ_Y,axis=0)
+    pZ_Y_ideal_logsoftmax = np.log(pZ_Y_ideal_logsoftmax)
+        
+    pZ = np.mean(pZ_Y_ideal_softmax,axis=0)
     hZ = calculateEntropy(pZ)
 
     #if everything is working perfectly, the class labels
     # predicted by the contexts should be the same as those
     # predicted by the target planets themselves. 
+    # But remember to treat softmaxs and logsoftmaxs correctly!
 
-    hZ_X_ub = -1.0*np.mean(np.sum(pZ_Y,axis=1))
+    X = np.multiply(pZ_Y_ideal_softmax, pZ_Y_ideal_logsoftmax)
+    hZ_X_ub = -1.0*np.mean(np.sum(X,axis=1))
     loss = hZ_X_ub - hZ
 
     return loss
