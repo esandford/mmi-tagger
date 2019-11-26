@@ -100,7 +100,7 @@ class MMIModel(nn.Module):
                                                                             pause_time=0.01,
                                                                             showplot=False,
                                                                             save=True,
-                                                                            figname="./simulatedPlanets/oneGrammar_distinctRp/fake_grammaticalSystems_allFeatures_uniformP_wide_planetWeights")
+                                                                            figname="./simulatedPlanets/oneGrammar_overlappingRp/fake_grammaticalSystems_Rp_uniformP_planetWeights")
                                 
                               
                     self.context_fig, self.context_cb, self.context_plottedWeights, self.context_plottedBiases = plot_net(self.context_fig,
@@ -118,7 +118,7 @@ class MMIModel(nn.Module):
                                                                             pause_time=0.01,
                                                                             showplot=False,
                                                                             save=True,
-                                                                            figname="./simulatedPlanets/oneGrammar_distinctRp/fake_grammaticalSystems_allFeatures_uniformP_wide_contextWeights")
+                                                                            figname="./simulatedPlanets/oneGrammar_overlappingRp/fake_grammaticalSystems_Rp_uniformP_contextWeights")
             
             self.iteration += 1
             return loss#, planet_weights, planet_biases, context_weights, context_biases
