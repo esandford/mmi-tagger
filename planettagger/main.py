@@ -23,7 +23,7 @@ def main(args):
     logger = Logger(args.model + '.log', args.train)
     logger.log('python ' + ' '.join(sys.argv) + '\n')
     logger.log('Random seed: %d' % args.seed)
-    control = Control(model, args.model, args.batch_size, device, logger, args.truth_known)
+    control = Control(model, args.model, args.batch_size, device, logger, args.truth_known, args.seed)
 
     if args.train:
         if os.path.exists(args.model):

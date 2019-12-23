@@ -55,7 +55,7 @@ def calculateLoss(targetTruths,data_path):
 
 class Control(nn.Module):
 
-    def __init__(self, model, model_path, batch_size, device, logger, truth_known):
+    def __init__(self, model, model_path, batch_size, device, logger, truth_known, seed):
         super(Control, self).__init__()
         self.model = model
         self.model_path = model_path
@@ -63,6 +63,7 @@ class Control(nn.Module):
         self.device = device
         self.logger = logger
         self.truth_known = truth_known
+        self.seed = seed
 
     def train(self, data, data_path, lr, epochs):
         self.log_data(data)
@@ -114,7 +115,7 @@ class Control(nn.Module):
         self.logger.log('=' * 89)
 
         epochLosses = np.vstack((np.array(epochLog).T,np.array(lossLog).T)).T
-        np.save("./{0}_losses.npy".format(data_path[:-4]),epochLosses)
+        np.save("./{0}_losses_{1}.npy".format(data_path[:-4],self.seed),epochLosses)
 
 
         return 
@@ -175,10 +176,10 @@ class Control(nn.Module):
         all_idxs = all_idxs[1:].astype(int)
         all_idxs = all_idxs[:,0] - 1 # 1-indexing to 0-indexing
 
-        np.save("./{0}_classprobs_softmax.npy".format(data_path[:-4]),all_future_probs)
-        np.save("./{0}_classprobs_fromcontext_logsoftmax.npy".format(data_path[:-4]),all_future_context_probs)
-        np.save("./{0}_idxs.npy".format(data_path[:-4]),all_idxs)
-        np.save("./{0}_optimalLoss.npy".format(data_path[:-4]),avg_truth_loss)
+        np.save("./{0}_classprobs_softmax_{1}.npy".format(data_path[:-4],self.seed),all_future_probs)
+        np.save("./{0}_classprobs_fromcontext_logsoftmax_{1}.npy".format(data_path[:-4],self.seed),all_future_context_probs)
+        np.save("./{0}_idxs_{1}.npy".format(data_path[:-4],self.seed),all_idxs)
+        np.save("./{0}_optimalLoss_{1}.npy".format(data_path[:-4],self.seed),avg_truth_loss)
         
         maxMI = (- avg_truth_loss) * math.log(math.e,2)
         print("avg_truth_loss is {0}; max MI is {1}".format(avg_truth_loss,maxMI))
