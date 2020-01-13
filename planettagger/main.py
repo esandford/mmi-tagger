@@ -31,6 +31,13 @@ def main(args):
         print("Resuming...")
         control.train(data, args.data, args.lr, args.epochs)
 
+    if args.cross_validate:
+        #holdout test set
+        
+        control.train(data, args.data, args.lr, args.epochs)
+
+        control.cross_validate(args.data, data, args.num_labels)
+
     elif os.path.exists(args.model):
         control.load_model(args.lr)
         control.classify(args.data, data, args.num_labels)
@@ -76,5 +83,9 @@ if __name__ == '__main__':
                         help='live plot weights?')
     parser.add_argument('--saveplot', action='store_true',
                         help='save plot of final weights?')
+    parser.add_argument('--cross_validate', action='store_true',
+                        help='cross-validate the model on a holdout test set?')
+    parser.add_argument('--holdout', type=float, default=0.3,
+                        help='fraction of systems to hold back for cross-validation')
     args = parser.parse_args()
     main(args)

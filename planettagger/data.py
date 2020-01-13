@@ -124,6 +124,6 @@ class Data(object):
             contexts = [get_context(i, j, width) for (i, j) in batch] # list of [left,right]s to make up X
         
         X = torch.FloatTensor(contexts).to(device)  # B x (num_stellar_features + (2width x num_planet_features)), where B = batch size = 15 for basic example
-        Y1 = torch.FloatTensor(targets).to(device)  # B x (num_planet_features + num_stellar_features)
+        Y1 = torch.FloatTensor(targets).to(device)  # B x (num_planet_features)
 
         return X, Y1, targetTruths

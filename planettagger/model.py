@@ -100,7 +100,7 @@ class MMIModel(nn.Module):
                                                                             pause_time=0.01,
                                                                             showplot=False,
                                                                             save=True,
-                                                                            figname="./simulatedPlanets/oneGrammar_overlappingRp/fake_grammaticalSystems_Rp_uniformP_planetWeights")
+                                                                            figname="./simulatedPlanets/crossValidation/fake_grammaticalSystems_Rp_uniformP_sigma=0.005_planetWeights")
                                 
                               
                     self.context_fig, self.context_cb, self.context_plottedWeights, self.context_plottedBiases = plot_net(self.context_fig,
@@ -118,7 +118,7 @@ class MMIModel(nn.Module):
                                                                             pause_time=0.01,
                                                                             showplot=False,
                                                                             save=True,
-                                                                            figname="./simulatedPlanets/oneGrammar_overlappingRp/fake_grammaticalSystems_Rp_uniformP_contextWeights")
+                                                                            figname="./simulatedPlanets/crossValidation/fake_grammaticalSystems_Rp_uniformP_sigma=0.005_contextWeights")
             
             self.iteration += 1
             return loss#, planet_weights, planet_biases, context_weights, context_biases
@@ -230,4 +230,52 @@ class PlanetRep(nn.Module):
             biases.append(list(layer.parameters())[1].data.numpy().T)
 
         return rep, weights, biases
+
+def reverse_planet(PlanetRepNetwork, Context_logSoftmax_Output, n_iter=100):
+    """
+    Given the log-softmax'd output of ContextRep, run it backward through the (already trained!)
+    PlanetRepNetwork to recover what the input planet properties must have been.
+    
+    Returns:
+    planet_approx, the approximate planet properties.
+
+    (based on https://github.com/yxlao/reverse-gan.pytorch/blob/master/dcgan_reverse.py)
+    """
+    #undo log
+    softmax = np.exp(Context_logSoftmax_Output)
+    #undo softmax (to recover what the output layer of ContextRep would have looked like before we softmax'd it)
+    sum_xi = np.sum(softmax)
+    context_output = np.log(softmax) + np.log(sum_xi)
+
+    mse_loss = nn.MSELoss()
+    mse_loss_ = nn.MSELoss()
+
+    #initialize an approximate input
+    planet_approx = torch.FloatTensor(1,PlanetRepNetwork.num_planet_features)
+
+    # convert to variable
+    planet_approx = Variable(planet_approx)
+    planet_approx.requires_grad = True
+
+    # optimizer
+    optimizer_approx = optim.Adam([planet_approx])
+
+    # train
+    for i in range(n_iter):
+        output_approx = PlanetRepNetwork(planet_approx)
+        mse_output = mse_loss(output_approx, context_output)
+        #mse_input = mse_loss_(planet_approx, planet)
+        #if i % 100 == 0:
+        #    print("[Iter {}] mse_g_z: {}, MSE_z: {}"
+        #          .format(i, mse_g_z.data[0], mse_z.data[0]))
+
+        # bprop
+        optimizer_approx.zero_grad()
+        mse_output.backward()
+        optimizer_approx.step()
+
+    return planet_approx
+
+
+
 
