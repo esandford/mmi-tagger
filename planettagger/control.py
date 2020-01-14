@@ -221,34 +221,6 @@ class Control(nn.Module):
         
         return future_probs
 
-    def predict_missing(self, CVdata_path, CVdata):
-        self.model.eval()
-        batches = CVdata.get_batches(1)
-        
-        predicted_props = np.zeros((1,self.model.num_planet_features))
-        all_idxs = np.zeros((1,1))
-
-        with torch.no_grad():
-            for batch in batches:
-                X, Y1, targetTruths = CVdata.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
-
-                future_probs, future_max_probs, future_indices, future_context_probs, future_max_context_probs, future_context_indices = self.model(X, Y1, is_training=False)
-                
-                predicted_props_ = self.model.reverse_planet(Context_logSoftmax_Output=future_context_probs, n_iter=100)
-                
-                predicted_props = np.vstack((predicted_props,predicted_props_.numpy()))
-                all_idxs = np.vstack((all_idxs,np.atleast_2d(np.array(CVdata.targetIdxs)).T))
-
-        predicted_props = predicted_props[1:]
-        
-        all_idxs = all_idxs[1:].astype(int)
-        all_idxs = all_idxs[:,0] - 1 # 1-indexing to 0-indexing
-
-        np.save("./{0}_prediction_idxs_{1}.npy".format(CVdata_path[:-4],self.seed),all_idxs)
-        np.save("./{0}_predicted_props_{1}.npy".format(CVdata_path[:-4],self.seed),predicted_props)
-        
-        return
-
     def load_model(self,lr):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
         with open(self.model_path, 'rb') as f:
