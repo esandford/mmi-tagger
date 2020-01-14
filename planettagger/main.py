@@ -32,11 +32,10 @@ def main(args):
         control.train(data, args.data, args.lr, args.epochs)
 
     if args.cross_validate:
-        #holdout test set
-        
-        control.train(data, args.data, args.lr, args.epochs)
-
-        control.cross_validate(args.data, data, args.num_labels)
+        control.load_model(args.lr)
+        CVdata = Data(args.num_planet_features, args.num_stellar_features, args.CVdata, args.truth_known)
+        control.cross_validate(args.CVdata, CVdata)
+        control.predict_missing(args.CVdata, CVdata)
 
     elif os.path.exists(args.model):
         control.load_model(args.lr)
@@ -50,7 +49,7 @@ if __name__ == '__main__':
     parser.add_argument('model', type=str,
                         help='model path')
     parser.add_argument('data', type=str,
-                        help='data path (X.words, assumes X.tags exists)')
+                        help='data path')
     parser.add_argument('--num_labels', type=int, default=45,
                         help='number of labels to induce [%(default)d]')
     parser.add_argument('--num_planet_features', type=int, default=2,
@@ -85,7 +84,7 @@ if __name__ == '__main__':
                         help='save plot of final weights?')
     parser.add_argument('--cross_validate', action='store_true',
                         help='cross-validate the model on a holdout test set?')
-    parser.add_argument('--holdout', type=float, default=0.3,
-                        help='fraction of systems to hold back for cross-validation')
+    parser.add_argument('--CVdata', type=str,
+                        help='holdout test set data path')
     args = parser.parse_args()
     main(args)

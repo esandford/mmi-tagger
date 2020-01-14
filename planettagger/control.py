@@ -186,12 +186,10 @@ class Control(nn.Module):
         
         return future_probs, zseqs, clustering
 
-    def cross_validate(self, data_path, data, num_labels):
+    def cross_validate(self, CVdata_path, CVdata):
         self.model.eval()
-        batches = data.get_batches(self.batch_size)
-        zseqs = [[False for w in sys] for sys in data.systems]
-        clustering = [{} for z in range(self.model.num_labels)]
-
+        batches = CVdata.get_batches(self.batch_size)
+        
         all_future_probs = np.zeros((1,self.model.num_labels))
         all_future_context_probs = np.zeros((1,self.model.num_labels))
         all_idxs = np.zeros((1,1))
@@ -199,38 +197,57 @@ class Control(nn.Module):
         avg_truth_loss = 0.
         with torch.no_grad():
             for batch in batches:
-                X, Y1, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
+                X, Y1, targetTruths = CVdata.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
 
                 if self.truth_known:
-                    truth_loss = calculateLoss(targetTruths,data_path)
+                    truth_loss = calculateLoss(targetTruths,CVdata_path)
                     avg_truth_loss += truth_loss / len(batches)
 
                 future_probs, future_max_probs, future_indices, future_context_probs, future_max_context_probs, future_context_indices = self.model(X, Y1, is_training=False)
                 all_future_probs = np.vstack((all_future_probs,future_probs.numpy()))
-                all_idxs = np.vstack((all_idxs,np.atleast_2d(np.array(data.targetIdxs)).T))
+                all_idxs = np.vstack((all_idxs,np.atleast_2d(np.array(CVdata.targetIdxs)).T))
 
                 all_future_context_probs = np.vstack((all_future_context_probs,future_context_probs.numpy()))
                 
-                for k, (i, j) in enumerate(batch):
-                    z = future_indices[k].max()
-                    zseqs[i][j] = z
-                    clustering[z][data.systems[i][j]] = True
-
         all_future_probs = all_future_probs[1:]
         all_future_context_probs = all_future_context_probs[1:]
         all_idxs = all_idxs[1:].astype(int)
         all_idxs = all_idxs[:,0] - 1 # 1-indexing to 0-indexing
 
-        np.save("./{0}_classprobs_softmax_{1}.npy".format(data_path[:-4],self.seed),all_future_probs)
-        np.save("./{0}_classprobs_fromcontext_logsoftmax_{1}.npy".format(data_path[:-4],self.seed),all_future_context_probs)
-        np.save("./{0}_idxs_{1}.npy".format(data_path[:-4],self.seed),all_idxs)
-        np.save("./{0}_optimalLoss_{1}.npy".format(data_path[:-4],self.seed),avg_truth_loss)
+        np.save("./{0}_classprobs_softmax_{1}.npy".format(CVdata_path[:-4],self.seed),all_future_probs)
+        np.save("./{0}_classprobs_fromcontext_logsoftmax_{1}.npy".format(CVdata_path[:-4],self.seed),all_future_context_probs)
+        np.save("./{0}_idxs_{1}.npy".format(CVdata_path[:-4],self.seed),all_idxs)
+        np.save("./{0}_optimalLoss_{1}.npy".format(CVdata_path[:-4],self.seed),avg_truth_loss)
         
-        maxMI = (- avg_truth_loss) * math.log(math.e,2)
-        print("avg_truth_loss is {0}; max MI is {1}".format(avg_truth_loss,maxMI))
-        
-        return future_probs, zseqs, clustering
+        return future_probs
 
+    def predict_missing(self, CVdata_path, CVdata):
+        self.model.eval()
+        batches = CVdata.get_batches(1)
+        
+        predicted_props = np.zeros((1,self.model.num_planet_features))
+        all_idxs = np.zeros((1,1))
+
+        with torch.no_grad():
+            for batch in batches:
+                X, Y1, targetTruths = CVdata.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
+
+                future_probs, future_max_probs, future_indices, future_context_probs, future_max_context_probs, future_context_indices = self.model(X, Y1, is_training=False)
+                
+                predicted_props_ = self.model.reverse_planet(Context_logSoftmax_Output=future_context_probs, n_iter=100)
+                
+                predicted_props = np.vstack((predicted_props,predicted_props_.numpy()))
+                all_idxs = np.vstack((all_idxs,np.atleast_2d(np.array(CVdata.targetIdxs)).T))
+
+        predicted_props = predicted_props[1:]
+        
+        all_idxs = all_idxs[1:].astype(int)
+        all_idxs = all_idxs[:,0] - 1 # 1-indexing to 0-indexing
+
+        np.save("./{0}_prediction_idxs_{1}.npy".format(CVdata_path[:-4],self.seed),all_idxs)
+        np.save("./{0}_predicted_props_{1}.npy".format(CVdata_path[:-4],self.seed),predicted_props)
+        
+        return
 
     def load_model(self,lr):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
