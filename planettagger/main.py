@@ -35,7 +35,6 @@ def main(args):
         control.load_model(args.lr)
         CVdata = Data(args.num_planet_features, args.num_stellar_features, args.CVdata, args.truth_known)
         control.cross_validate(args.CVdata, CVdata)
-        control.predict_missing(args.CVdata, CVdata)
 
     elif os.path.exists(args.model):
         control.load_model(args.lr)
