@@ -2,7 +2,6 @@ from __future__ import division, print_function
 import os
 import sys
 
-
 class Logger(object):
 
     def __init__(self, log_path, on=True):

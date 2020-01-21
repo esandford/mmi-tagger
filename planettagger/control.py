@@ -213,6 +213,8 @@ class Control(nn.Module):
         all_future_context_probs = all_future_context_probs[1:]
         all_idxs = all_idxs[1:].astype(int)
         all_idxs = all_idxs[:,0] - 1 # 1-indexing to 0-indexing
+        
+        print(CVdata_path[:-4])
 
         np.save("./{0}_classprobs_softmax_{1}.npy".format(CVdata_path[:-4],self.seed),all_future_probs)
         np.save("./{0}_classprobs_fromcontext_logsoftmax_{1}.npy".format(CVdata_path[:-4],self.seed),all_future_context_probs)

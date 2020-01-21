@@ -11,29 +11,67 @@ from model import MMIModel
 
 
 def main(args):
+    #get arguments as bools
+    argsToCheck = [args.train, args.truth_known, args.plot, args.saveplot, args.cross_validate]
+    
+    if (args.train).lower() == 'true':
+        TRAIN = True
+    else:
+        TRAIN = False
+
+    if (args.truth_known).lower() == 'true':
+        TRUTH_KNOWN = True
+    else:
+        TRUTH_KNOWN = False
+
+    if (args.plot).lower() == 'true':
+        PLOT = True
+    else:
+        PLOT = False
+
+    if (args.saveplot).lower() == 'true':
+        SAVEPLOT = True
+    else:
+        SAVEPLOT = False
+
+    if (args.cross_validate).lower() == 'true':
+        CROSS_VALIDATE = True
+    else:
+        CROSS_VALIDATE = False
+
+    #get arguments as list
     feature_names = args.feature_names
     feature_names = list(map(str, feature_names.strip('[]').split(',')))
     
+    #initiate network
     random.seed(args.seed)
     torch.manual_seed(args.seed)
     device = torch.device('cuda' if args.cuda else 'cpu')
-    data = Data(args.num_planet_features, args.num_stellar_features, args.data, args.truth_known)
+    
+    #get data in correct form, using Data class
+    data = Data(args.num_planet_features, args.num_stellar_features, args.data, TRUTH_KNOWN)
 
-    model = MMIModel(args.num_planet_features, args.num_stellar_features, args.num_labels, args.width, args.dropout_prob, feature_names, args.plot, args.saveplot).to(device)
-    logger = Logger(args.model + '.log', args.train)
+    #create model, using MMIModel class
+    model = MMIModel(args.num_planet_features, args.num_stellar_features, args.num_labels, args.width, args.dropout_prob, feature_names, PLOT, SAVEPLOT).to(device)
+    
+    #create logger, using Logger class
+    logger = Logger(args.model + '.log', TRAIN)
     logger.log('python ' + ' '.join(sys.argv) + '\n')
     logger.log('Random seed: %d' % args.seed)
-    control = Control(model, args.model, args.batch_size, device, logger, args.truth_known, args.seed)
+    
+    #create control, using Control class
+    control = Control(model, args.model, args.batch_size, device, logger, TRUTH_KNOWN, args.seed)
 
-    if args.train:
+    
+    if TRAIN is True:
         if os.path.exists(args.model):
             control.load_model(args.lr)
         print("Resuming...")
         control.train(data, args.data, args.lr, args.epochs)
 
-    if args.cross_validate:
+    elif CROSS_VALIDATE is True:
         control.load_model(args.lr)
-        CVdata = Data(args.num_planet_features, args.num_stellar_features, args.CVdata, args.truth_known)
+        CVdata = Data(args.num_planet_features, args.num_stellar_features, args.CVdata, TRUTH_KNOWN)
         control.cross_validate(args.CVdata, CVdata)
 
     elif os.path.exists(args.model):
@@ -41,6 +79,7 @@ def main(args):
         control.classify(args.data, data, args.num_labels)
        
 
+#main
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Maximal Mutual Information (MMI) Tagger')
@@ -59,8 +98,6 @@ if __name__ == '__main__':
                         help='names of features')
     parser.add_argument('--dropout_prob', type=float, default=0.05,
                         help='dropout probability in network layers [%(default)g]')
-    parser.add_argument('--train', action='store_true',
-                        help='train?')
     parser.add_argument('--batch_size', type=int, default=10, metavar='B',
                         help='batch size [%(default)d]')
     parser.add_argument('--dim', type=int, default=200,
@@ -75,13 +112,15 @@ if __name__ == '__main__':
                         help='random seed [%(default)d]')
     parser.add_argument('--cuda', action='store_true',
                         help='use CUDA?')
-    parser.add_argument('--truth_known', action='store_true',
+    parser.add_argument('--train', type=str, default="True",
+                        help='train?')
+    parser.add_argument('--truth_known', type=str, default="True",
                         help='truth known?')
-    parser.add_argument('--plot', action='store_true',
+    parser.add_argument('--plot', type=str, default="False",
                         help='live plot weights?')
-    parser.add_argument('--saveplot', action='store_true',
+    parser.add_argument('--saveplot', type=str, default="False",
                         help='save plot of final weights?')
-    parser.add_argument('--cross_validate', action='store_true',
+    parser.add_argument('--cross_validate', type=str, default="False",
                         help='cross-validate the model on a holdout test set?')
     parser.add_argument('--CVdata', type=str,
                         help='holdout test set data path')
