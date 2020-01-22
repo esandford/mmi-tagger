@@ -82,7 +82,7 @@ def main(args):
 #main
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Maximal Mutual Information (MMI) Tagger')
+        description='Maximal Mutual Information (MMI) Plaent Classifier')
 
     parser.add_argument('model', type=str,
                         help='model path')
@@ -112,15 +112,15 @@ if __name__ == '__main__':
                         help='random seed [%(default)d]')
     parser.add_argument('--cuda', action='store_true',
                         help='use CUDA?')
-    parser.add_argument('--train', type=str, default="True",
+    parser.add_argument('--train', type=str,
                         help='train?')
-    parser.add_argument('--truth_known', type=str, default="True",
+    parser.add_argument('--truth_known', type=str,
                         help='truth known?')
     parser.add_argument('--plot', type=str, default="False",
                         help='live plot weights?')
     parser.add_argument('--saveplot', type=str, default="False",
                         help='save plot of final weights?')
-    parser.add_argument('--cross_validate', type=str, default="False",
+    parser.add_argument('--cross_validate', type=str,
                         help='cross-validate the model on a holdout test set?')
     parser.add_argument('--CVdata', type=str,
                         help='holdout test set data path')

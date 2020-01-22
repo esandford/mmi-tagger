@@ -21,9 +21,7 @@ class Data(object):
         self.planet2i = {self.PAD: 0} #will contain each "planet" in the training set, uniquely
         self.i2planet = [self.PAD]
         self.targetIdxs = []
-
         self.label_counter = Counter()
-
         self.truths = []
         
         self.get_data(truth_known)

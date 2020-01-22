@@ -129,46 +129,6 @@ class MMIModel(nn.Module):
             future_max_context_probs, future_context_indices = context_rep.max(1)
             return F.softmax(softmax_scale*planet_rep, dim=1), future_max_probs, future_indices, F.log_softmax(softmax_scale*context_rep, dim=1), future_max_context_probs, future_context_indices
 
-    def reverse_planet(self, Context_logSoftmax_Output, n_iter=100):
-        """
-        Given the log-softmax'd output of ContextRep, run it backward through the (already trained!)
-        self.indivPlanet network to recover what the input planet properties must have been.
-        
-        Returns:
-        planet_approx, the approximate planet properties.
-
-        (based on https://github.com/yxlao/reverse-gan.pytorch/blob/master/dcgan_reverse.py)
-        """
-        #undo log
-        softmax = np.exp(Context_logSoftmax_Output)
-        #undo softmax (to recover what the output layer of ContextRep would have looked like before we softmax'd it)
-        sum_xi = np.sum(softmax.numpy())
-        context_output = np.log(softmax) + np.log(sum_xi)
-        context_output.requires_grad = True
-
-        mse_loss = nn.MSELoss()
-        mse_loss_ = nn.MSELoss()
-
-        #initialize an approximate input
-        planet_approx = torch.FloatTensor(1, self.num_planet_features).uniform_(-1, 1)
-        
-        # convert to variable
-        planet_approx = Variable(planet_approx,requires_grad=True)
-
-        # optimizer
-        optimizer_approx = optim.Adam([planet_approx])
-        # train
-        for i in range(n_iter):
-            output_approx, w, b = self.indivPlanet(planet_approx)
-            mse_output = mse_loss(output_approx, context_output)
-            mse_output.requires_grad = True
-            # backprop
-            optimizer_approx.zero_grad()
-            mse_output.backward()
-            optimizer_approx.step()
-
-        return planet_approx.detach()
-
 class Loss(nn.Module):
 
     def __init__(self):
@@ -221,8 +181,6 @@ class ContextRep(nn.Module):
 
         self.drop_layer = nn.Dropout(p=dropout_prob)
 
-        
-
     def forward(self, contextPlanetData):
         #contextPlanets will be of the shape: Batchsize x 2width x numPlanetFeatures, e.g. shape (15, 4, 5)
         # self.linear1 wants to operate on something of shape (Batchsize, 2width*numPlanetFeatuers), e.g. (15, 20)
@@ -238,7 +196,6 @@ class ContextRep(nn.Module):
             biases.append(list(layer.parameters())[1].data.numpy().T)
 
         return rep, weights, biases
-
 
 class PlanetRep(nn.Module):
 
