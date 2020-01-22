@@ -120,7 +120,7 @@ if __name__ == '__main__':
                         help='live plot weights?')
     parser.add_argument('--saveplot', type=str, default="False",
                         help='save plot of final weights?')
-    parser.add_argument('--cross_validate', type=str,
+    parser.add_argument('--cross_validate', type=str, default="False",
                         help='cross-validate the model on a holdout test set?')
     parser.add_argument('--CVdata', type=str,
                         help='holdout test set data path')
