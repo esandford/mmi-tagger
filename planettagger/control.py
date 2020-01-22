@@ -10,17 +10,20 @@ import pickle
 from datetime import timedelta
 
 def calculateEntropy(probs):
+    """
+    calculate information entropy, S = -sum_i[ p_i * ln(p_i) ]
+    """
     x = np.multiply(probs,np.log(probs))
     entro = -1. * np.sum(x)
     return entro
 
-def calculateLoss(targetTruths,data_path):
+def calculateLoss(targetTruths):
     """
     Calculate the loss function if everything were labeled correctly, i.e. the "goal"
     loss function.
 
-    targetTruths = length Batchsize list, each entry of which is a value between 0...(nclasses-1)
-                   corresponding tot he true class membership of that target planet.
+    targetTruths = list of length Batchsize, each entry of which is a value between 0...(nclasses-1)
+                   corresponding to the true class membership of that target planet.
     """
     #evaluate loss function for truths
     B = int(len(targetTruths))
@@ -54,8 +57,35 @@ def calculateLoss(targetTruths,data_path):
     return loss
 
 class Control(nn.Module):
+    """
+    A class inheriting from torch.nn.Module, the base class of pytorch neural network modules.
+    Has functions to train our network, evaluate it on the training set, evaluate it on
+    a holdout CV set, etc.
+
+    """
 
     def __init__(self, model, model_path, batch_size, device, logger, truth_known, seed):
+        """
+        Initialize the Control object.
+
+        Parameters
+        ---------
+        model : obj
+            a model.MMIModel object, which inherits from torch.nn.Module
+        model_path : str
+            a path specifying where the model will be saved
+        batch_size: int
+            the size of each training batch
+        device : obj
+            a torch.device object ('cuda' or 'cpu') 
+        logger : obj
+            a logger.Logger object which can write to stdout and our log file
+        truth_known : bool
+            whether the true class of the planets in the training set is known 
+            (as it would be for simulated data) or not (as it would be for real data)
+        seed : int
+            the random seed of the model
+        """
         super(Control, self).__init__()
         self.model = model
         self.model_path = model_path
@@ -66,6 +96,23 @@ class Control(nn.Module):
         self.seed = seed
 
     def train(self, data, data_path, lr, epochs):
+        """
+        Train self.model (which is specified at initialization of the Control object)
+        for a specified number of epochs.
+
+        Parameters
+        ---------
+        data : obj
+            a data.Data object containing the training data
+        data_path : str
+            a path to the training data file
+        lr : float
+            the learning rate to be used by the Adam optimizer
+        epochs : int
+            the number of training epochs to do 
+        """
+
+        # Write metadata to the log file
         self.log_data(data)
         self.logger.log('[TRAINING]')
         self.logger.log('   num_labels:    %d' % self.model.num_labels)
@@ -74,6 +121,9 @@ class Control(nn.Module):
         self.logger.log('   epochs:        %d' % epochs)
         self.logger.log('')
 
+        # Initialize the model optimizer. use the Adam algorithm, which is for
+        # "first-order, gradient-based optimization of stochastic objective
+        # functions" (see https://arxiv.org/abs/1412.6980)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
         start_time = time.time()
 
@@ -82,10 +132,14 @@ class Control(nn.Module):
 
         try:
             for epoch in range(1, epochs + 1):
+                # calculate the average value of the loss function over a training epoch.
+                # also keep track of how long that training epoch took.
                 avg_loss, epoch_time = self.do_epoch(data, optimizer)
-                #print("avg_loss is {0}".format(avg_loss))
-                #print("epoch_time is {0}".format(epoch_time))
+
+                # calculate the number of bits of information learned
                 bits = (- avg_loss) * math.log(math.e,2)
+
+                # write the results of this training epoch to stdout and the log file
                 self.logger.log('| epoch {:3d} | loss {:6.12f} | {:6.12f} bits | '
                                 'time {:10s}'.format(
                                     epoch, avg_loss, bits,
@@ -93,135 +147,198 @@ class Control(nn.Module):
 
                 epochLog.append(epoch)
                 lossLog.append(avg_loss)
+
+                # save the state of the model after this training epoch
                 with open(self.model_path, 'wb') as f:
                     state = {'epoch': epoch + 1, 'state_dict': self.model.state_dict(),
                      'optimizer': optimizer.state_dict()}
                     torch.save(state, f)
-                    #torch.save(self.model, f)
 
-            for epoch in range(1):
-                avg_loss, epoch_time = self.do_epoch(data, optimizer)
-                
-            
         except KeyboardInterrupt:
             self.logger.log('-' * 89)
             self.logger.log('Exiting from training early')
 
+        # write time elapsed during training to stdout and the log file
         self.logger.log('\nTraining time {:10s}'.format(
             str(timedelta(seconds=int(time.time() - start_time)))))
-
-        #self.load_model(self.lr)
         self.logger.log('=' * 89)
         self.logger.log('=' * 89)
 
+        # write the value of the loss function at each epoch to a .npy file, 
+        # for easier analysis later (i.e. so we don't have to parse the log file)
         epochLosses = np.vstack((np.array(epochLog).T,np.array(lossLog).T)).T
         np.save("./{0}_losses_{1}.npy".format(data_path[:-4],self.seed),epochLosses)
-
 
         return 
 
     def do_epoch(self, data, optimizer):
+        """
+        Do one training epoch.
+
+        Parameters
+        ---------
+        data : obj
+            a data.Data object containing the training data
+        optimizer : obj
+            a torch.optim.Adam object
+
+        Returns
+        ---------
+        avg_loss : float
+            The average value of the loss function over the batches.
+        epoch_time : float
+            How long it took to do this training epoch, in seconds
+        """
+
+        # set the model (an object which inherits from torch.nn.Module) in training mode
+        # set the initial value of the average loss at 0 and record the clock time
+        # when the training epoch began
         self.model.train()
         avg_loss = 0
         epoch_start_time = time.time()
-        batches = data.get_batches(self.batch_size)
-        #print(type(batches)) #list, each element of which is 1 batch 
-        for batch in batches:
-            self.model.zero_grad()
-            X, Y1, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
-            #print("X shape is {0}".format(X.shape))    # Batchsize x 2width x (num_planet_features + num_stellar_features)
-            #print("Y1 shape is {0}".format(Y1.shape))  # Batchsize x (num_planet_features + num_stellar_features)
-            loss = self.model(X, Y1, is_training=True) # runs MMIModel.forward(X, Y1, is_training=True)
 
+        # organize the data into batches
+        batches = data.get_batches(self.batch_size)
+
+        for batch in batches:
+            # set gradients of all model parameters to 0
+            self.model.zero_grad()
+
+            # convert the data in the batch into torch tensor format
+            # X is of type torch.Tensor; it contains the context data
+            #   and is of shape [Batchsize, (2width * num_planet_features) + num_stellar_features)]
+            # Y1 is of type torch.Tensor; it contains the target data
+            #    and is of shape [Batchsize, num_planet_features]
+            # targetTruths is a list of length Batchsize. The ith entry is an integer between 0
+            #    and nClasses-1 which indicates the true class of target planet i in the batch
+            X, Y1, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
+
+            # run MMIModel.forward(X, Y1, is_training=True)
+            loss = self.model(X, Y1, is_training=True)
+
+            # Add the value of the loss function for this batch
+            # into the average loss over all the batches
             avg_loss += loss.item() / len(batches)
+
+            # Backpropagation
             loss.backward()
             optimizer.step()
 
+        # Calculate how long this training epoch took, in seconds
         epoch_time = time.time() - epoch_start_time
         
         return avg_loss, epoch_time
 
     def classify(self, data_path, data, num_labels):
-        self.model.eval()
-        batches = data.get_batches(self.batch_size)
-        zseqs = [[False for w in sys] for sys in data.systems]
-        clustering = [{} for z in range(self.model.num_labels)]
+        """
+        Evaluate the (trained) model on the training data.
 
-        all_future_probs = np.zeros((1,self.model.num_labels))
-        all_future_context_probs = np.zeros((1,self.model.num_labels))
+        Parameters
+        ---------
+        data_path : str
+            The path to the training data file
+        data : obj
+            a data.Data object containing the training data
+        num_labels : int
+            The number of classes into which the model has been trained to sort the planets
+        """
+
+        # set the model (an object which inherits from torch.nn.Module) in evaluation mode
+        self.model.eval()
+
+        # organize the data to be evaluated into batches
+        batches = data.get_batches(self.batch_size)
+
+        # make empty arrays to hold the network's predictions based on target data
+        # and context data
+        all_target_probs = np.zeros((1,self.model.num_labels))
+        all_context_probs = np.zeros((1,self.model.num_labels))
+
+        # make empty arrays to keep track of how the network has reshuffled the
+        # training data
         all_idxs = np.zeros((1,1))
-        all_context_idxs = np.zeros((1,1))
-        avg_truth_loss = 0.
+
+        # if TRUTH_KNOWN, we want to calculate the *ideal* loss function, i.e.
+        # what the loss function would be if the data were perfectly classified.
+        # set the initial value of this ideal average loss at 0
+        avg_loss_ideal = 0.
+
+        # temporarily set the torch requires_grad flag to False, to stop autograd
+        # from tracking the history on Tensors here. (we're not training, so 
+        # we don't need that history.)
         with torch.no_grad():
             for batch in batches:
+                # convert the data in the batch into torch tensor format
+                # X is of type torch.Tensor; it contains the context data
+                #   and is of shape [Batchsize, (2width * num_planet_features) + num_stellar_features)]
+                # Y1 is of type torch.Tensor; it contains the target data
+                #    and is of shape [Batchsize, num_planet_features]
+                # targetTruths is a list of length Batchsize. The ith entry is an integer between 0
+                #    and nClasses-1 which indicates the true class of target planet i in the batch
                 X, Y1, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
 
                 if self.truth_known:
-                    truth_loss = calculateLoss(targetTruths,data_path)
-                    avg_truth_loss += truth_loss / len(batches)
+                    loss_ideal = calculateLoss(targetTruths)
+                    avg_loss_ideal += loss_ideal / len(batches)
 
-                future_probs, future_max_probs, future_indices, future_context_probs, future_max_context_probs, future_context_indices = self.model(X, Y1, is_training=False)
-                all_future_probs = np.vstack((all_future_probs,future_probs.numpy()))
+                target_probs, target_max_probs, context_probs, context_max_probs = self.model(X, Y1, is_training=False)
+                all_target_probs = np.vstack((all_target_probs,target_probs.numpy()))
                 all_idxs = np.vstack((all_idxs,np.atleast_2d(np.array(data.targetIdxs)).T))
 
-                all_future_context_probs = np.vstack((all_future_context_probs,future_context_probs.numpy()))
+                all_context_probs = np.vstack((all_context_probs,context_probs.numpy()))
                 
-                for k, (i, j) in enumerate(batch):
-                    z = future_indices[k].max()
-                    zseqs[i][j] = z
-                    clustering[z][data.systems[i][j]] = True
-
-        all_future_probs = all_future_probs[1:]
-        all_future_context_probs = all_future_context_probs[1:]
+                
+        all_target_probs = all_target_probs[1:]
+        all_context_probs = all_context_probs[1:]
         all_idxs = all_idxs[1:].astype(int)
         all_idxs = all_idxs[:,0] - 1 # 1-indexing to 0-indexing
 
-        np.save("./{0}_classprobs_softmax_{1}.npy".format(data_path[:-4],self.seed),all_future_probs)
-        np.save("./{0}_classprobs_fromcontext_logsoftmax_{1}.npy".format(data_path[:-4],self.seed),all_future_context_probs)
+        np.save("./{0}_classprobs_softmax_{1}.npy".format(data_path[:-4],self.seed),all_target_probs)
+        np.save("./{0}_classprobs_fromcontext_logsoftmax_{1}.npy".format(data_path[:-4],self.seed),all_context_probs)
         np.save("./{0}_idxs_{1}.npy".format(data_path[:-4],self.seed),all_idxs)
-        np.save("./{0}_optimalLoss_{1}.npy".format(data_path[:-4],self.seed),avg_truth_loss)
+        np.save("./{0}_optimalLoss_{1}.npy".format(data_path[:-4],self.seed),avg_loss_ideal)
         
-        maxMI = (- avg_truth_loss) * math.log(math.e,2)
-        print("avg_truth_loss is {0}; max MI is {1}".format(avg_truth_loss,maxMI))
+        maxMI = (- avg_loss_ideal) * math.log(math.e,2)
+        print("avg_loss_ideal is {0}; max MI is {1}".format(avg_loss_ideal,maxMI))
         
-        return future_probs, zseqs, clustering
+        return
 
     def cross_validate(self, CVdata_path, CVdata):
         self.model.eval()
         batches = CVdata.get_batches(self.batch_size)
         
-        all_future_probs = np.zeros((1,self.model.num_labels))
-        all_future_context_probs = np.zeros((1,self.model.num_labels))
+        all_target_probs = np.zeros((1,self.model.num_labels))
+        all_context_probs = np.zeros((1,self.model.num_labels))
         all_idxs = np.zeros((1,1))
-        all_context_idxs = np.zeros((1,1))
-        avg_truth_loss = 0.
+
+        avg_loss_ideal = 0.
         with torch.no_grad():
             for batch in batches:
                 X, Y1, targetTruths = CVdata.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
 
                 if self.truth_known:
-                    truth_loss = calculateLoss(targetTruths,CVdata_path)
-                    avg_truth_loss += truth_loss / len(batches)
+                    loss_ideal = calculateLoss(targetTruths)
+                    avg_loss_ideal += loss_ideal / len(batches)
 
-                future_probs, future_max_probs, future_indices, future_context_probs, future_max_context_probs, future_context_indices = self.model(X, Y1, is_training=False)
-                all_future_probs = np.vstack((all_future_probs,future_probs.numpy()))
+                target_probs, target_max_probs, context_probs, context_max_probs = self.model(X, Y1, is_training=False)
+                all_target_probs = np.vstack((all_target_probs,target_probs.numpy()))
                 all_idxs = np.vstack((all_idxs,np.atleast_2d(np.array(CVdata.targetIdxs)).T))
 
-                all_future_context_probs = np.vstack((all_future_context_probs,future_context_probs.numpy()))
+                all_context_probs = np.vstack((all_context_probs,context_probs.numpy()))
                 
-        all_future_probs = all_future_probs[1:]
-        all_future_context_probs = all_future_context_probs[1:]
+        all_target_probs = all_target_probs[1:]
+        all_context_probs = all_context_probs[1:]
         all_idxs = all_idxs[1:].astype(int)
         all_idxs = all_idxs[:,0] - 1 # 1-indexing to 0-indexing
         
         print(CVdata_path[:-4])
 
-        np.save("./{0}_classprobs_softmax_{1}.npy".format(CVdata_path[:-4],self.seed),all_future_probs)
-        np.save("./{0}_classprobs_fromcontext_logsoftmax_{1}.npy".format(CVdata_path[:-4],self.seed),all_future_context_probs)
+        np.save("./{0}_classprobs_softmax_{1}.npy".format(CVdata_path[:-4],self.seed),all_target_probs)
+        np.save("./{0}_classprobs_fromcontext_logsoftmax_{1}.npy".format(CVdata_path[:-4],self.seed),all_context_probs)
         np.save("./{0}_idxs_{1}.npy".format(CVdata_path[:-4],self.seed),all_idxs)
-        np.save("./{0}_optimalLoss_{1}.npy".format(CVdata_path[:-4],self.seed),avg_truth_loss)
+        np.save("./{0}_optimalLoss_{1}.npy".format(CVdata_path[:-4],self.seed),avg_loss_ideal)
         
-        return future_probs
+        return
 
     def load_model(self,lr):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)

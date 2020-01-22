@@ -61,12 +61,11 @@ def main(args):
     
     #create control, using Control class
     control = Control(model, args.model, args.batch_size, device, logger, TRUTH_KNOWN, args.seed)
-
     
     if TRAIN is True:
         if os.path.exists(args.model):
             control.load_model(args.lr)
-        print("Resuming...")
+            print("Resuming...")
         control.train(data, args.data, args.lr, args.epochs)
 
     elif CROSS_VALIDATE is True:

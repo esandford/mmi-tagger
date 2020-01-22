@@ -127,7 +127,7 @@ class MMIModel(nn.Module):
         else:
             future_max_probs, future_indices = planet_rep.max(1)
             future_max_context_probs, future_context_indices = context_rep.max(1)
-            return F.softmax(softmax_scale*planet_rep, dim=1), future_max_probs, future_indices, F.log_softmax(softmax_scale*context_rep, dim=1), future_max_context_probs, future_context_indices
+            return F.softmax(softmax_scale*planet_rep, dim=1), future_max_probs, F.log_softmax(softmax_scale*context_rep, dim=1), future_max_context_probs
 
 class Loss(nn.Module):
 
