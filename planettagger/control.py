@@ -12,6 +12,11 @@ from datetime import timedelta
 def calculateEntropy(probs):
     """
     calculate information entropy, S = -sum_i[ p_i * ln(p_i) ]
+
+    Parameters
+    ---------
+    probs : np.array
+        The class membership probabilities of a target planet. Length n_classes
     """
     x = np.multiply(probs,np.log(probs))
     entro = -1. * np.sum(x)
@@ -21,7 +26,9 @@ def calculateLoss(targetTruths):
     """
     Calculate the loss function if everything were labeled correctly, i.e. the "goal"
     loss function.
-
+    
+    Parameters
+    ---------
     targetTruths = list of length Batchsize, each entry of which is a value between 0...(nclasses-1)
                    corresponding to the true class membership of that target planet.
     """
@@ -337,15 +344,30 @@ class Control(nn.Module):
         return
 
     def load_model(self,lr):
+        """
+        Load a previous state of the MMIModel.
+
+        Parameters
+        ---------
+        lr : float
+            the learning rate to be used by the Adam optimizer (from now on)
+        """
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
         with open(self.model_path, 'rb') as f:
-            #self.model = torch.load(f)
             checkpoint = torch.load(f)
             self.model.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer'])
             print("=> loaded checkpoint '{}' (epoch {})".format(f, checkpoint['epoch']))
 
     def log_data(self, data):
+        """
+        Log basic facts about the data to the log file and stdout.
+
+        Parameters
+        ---------
+        data : obj
+            a data.Data object
+        """
         self.logger.log('-' * 89)
         self.logger.log('[DATA]')
         self.logger.log('   data:          %s' % data.data_path)
