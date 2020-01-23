@@ -17,6 +17,11 @@ def calculateEntropy(probs):
     ---------
     probs : np.array
         The class membership probabilities of a target planet. Length n_classes
+
+    Returns
+    ---------
+    entro : float
+        The information entropy of this array of probabilities
     """
     x = np.multiply(probs,np.log(probs))
     entro = -1. * np.sum(x)
@@ -29,10 +34,16 @@ def calculateLoss(targetTruths):
     
     Parameters
     ---------
-    targetTruths = list of length Batchsize, each entry of which is a value between 0...(nclasses-1)
-                   corresponding to the true class membership of that target planet.
+    targetTruths : list 
+        list of length Batchsize, each entry of which is a value between 0...(nclasses-1)
+        corresponding to the true class membership of that target planet.
+    
+    Returns
+    ---------
+    loss : float
+        The value of the (ideal) loss function
     """
-    #evaluate loss function for truths
+
     B = int(len(targetTruths))
     nClasses = int(np.max(np.array(targetTruths)) + 1)
 
@@ -214,14 +225,14 @@ class Control(nn.Module):
             # convert the data in the batch into torch tensor format
             # X is of type torch.Tensor; it contains the context data
             #   and is of shape [Batchsize, (2width * num_planet_features) + num_stellar_features)]
-            # Y1 is of type torch.Tensor; it contains the target data
+            # Y is of type torch.Tensor; it contains the target data
             #    and is of shape [Batchsize, num_planet_features]
             # targetTruths is a list of length Batchsize. The ith entry is an integer between 0
             #    and nClasses-1 which indicates the true class of target planet i in the batch
-            X, Y1, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
+            X, Y, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
 
-            # run MMIModel.forward(X, Y1, is_training=True)
-            loss = self.model(X, Y1, is_training=True)
+            # run MMIModel.forward(X, Y, is_training=True)
+            loss = self.model(X, Y, is_training=True)
 
             # Add the value of the loss function for this batch
             # into the average loss over all the batches
@@ -280,11 +291,11 @@ class Control(nn.Module):
                 # convert the data in the batch into torch tensor format
                 # X is of type torch.Tensor; it contains the context data
                 #   and is of shape [Batchsize, (2width * num_planet_features) + num_stellar_features)]
-                # Y1 is of type torch.Tensor; it contains the target data
+                # Y is of type torch.Tensor; it contains the target data
                 #    and is of shape [Batchsize, num_planet_features]
                 # targetTruths is a list of length Batchsize. The ith entry is an integer between 0
                 #    and nClasses-1 which indicates the true class of target planet i in the batch
-                X, Y1, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
+                X, Y, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
 
                 # if truth is known, calculate the value the loss function
                 # would have if all the data were classified perfectly
@@ -296,7 +307,7 @@ class Control(nn.Module):
                 # class probabilities of the target planets from the target network
                 # (target_probs) and from the context network (context_probs).
                 # Both are torch tensors of shape (Batchsize, nClasses).
-                target_probs, context_probs = self.model(X, Y1, is_training=False)
+                target_probs, context_probs = self.model(X, Y, is_training=False)
 
                 # calculate the avg value of the loss function over this batch
                 pZ = target_probs.mean(0)
@@ -359,6 +370,8 @@ class Control(nn.Module):
             optimizer.load_state_dict(checkpoint['optimizer'])
             print("=> loaded checkpoint '{}' (epoch {})".format(f, checkpoint['epoch']))
 
+        return
+
     def log_data(self, data):
         """
         Log basic facts about the data to the log file and stdout.
@@ -373,3 +386,5 @@ class Control(nn.Module):
         self.logger.log('   data:          %s' % data.data_path)
         self.logger.log('   # planets:     %d' % sum(len(sys) for sys in data.systems))
         self.logger.log('-' * 89)
+
+        return
