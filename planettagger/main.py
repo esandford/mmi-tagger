@@ -71,11 +71,11 @@ def main(args):
     elif CROSS_VALIDATE is True:
         control.load_model(args.lr)
         CVdata = Data(args.num_planet_features, args.num_stellar_features, args.CVdata, TRUTH_KNOWN)
-        control.cross_validate(args.CVdata, CVdata)
+        control.classify(args.CVdata, CVdata)
 
     elif os.path.exists(args.model):
         control.load_model(args.lr)
-        control.classify(args.data, data, args.num_labels)
+        control.classify(args.data, data)
        
 
 #main

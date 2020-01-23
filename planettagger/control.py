@@ -229,18 +229,16 @@ class Control(nn.Module):
         
         return avg_loss, epoch_time
 
-    def classify(self, data_path, data, num_labels):
+    def classify(self, data_path, data):
         """
-        Evaluate the (trained) model on the training data.
+        Evaluate the (trained) model on some data (either training data or holdout test data)
 
         Parameters
         ---------
         data_path : str
-            The path to the training data file
+            The path to the data file
         data : obj
-            a data.Data object containing the training data
-        num_labels : int
-            The number of classes into which the model has been trained to sort the planets
+            a data.Data object containing the data
         """
 
         # set the model (an object which inherits from torch.nn.Module) in evaluation mode
@@ -254,14 +252,18 @@ class Control(nn.Module):
         all_target_probs = np.zeros((1,self.model.num_labels))
         all_context_probs = np.zeros((1,self.model.num_labels))
 
-        # make empty arrays to keep track of how the network has reshuffled the
-        # training data
+        # make empty arrays to keep track of how the network has reshuffled the data
         all_idxs = np.zeros((1,1))
 
         # if TRUTH_KNOWN, we want to calculate the *ideal* loss function, i.e.
         # what the loss function would be if the data were perfectly classified.
         # set the initial value of this ideal average loss at 0
-        avg_loss_ideal = 0.
+        if self.truth_known:
+            avg_loss_ideal = 0.
+
+        # in any case, we want to calculate the loss function given the network's
+        # actual classifications. set the inital value of this to 0
+        avg_loss_actual = 0.
 
         # temporarily set the torch requires_grad flag to False, to stop autograd
         # from tracking the history on Tensors here. (we're not training, so 
@@ -277,66 +279,60 @@ class Control(nn.Module):
                 #    and nClasses-1 which indicates the true class of target planet i in the batch
                 X, Y1, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
 
+                # if truth is known, calculate the value the loss function
+                # would have if all the data were classified perfectly
                 if self.truth_known:
                     loss_ideal = calculateLoss(targetTruths)
                     avg_loss_ideal += loss_ideal / len(batches)
 
-                target_probs, target_max_probs, context_probs, context_max_probs = self.model(X, Y1, is_training=False)
+                # run the target & context models forward. get the 
+                # class probabilities of the target planets from the target network
+                # (target_probs) and from the context network (context_probs).
+                # Both are torch tensors of shape (Batchsize, nClasses).
+                target_probs, context_probs = self.model(X, Y1, is_training=False)
+
+                # calculate the avg value of the loss function over this batch
+                pZ = target_probs.mean(0)
+                pZ_temp = pZ * torch.log(pZ)
+                hZ = -1.0 * pZ_temp.sum()
+                x = target_probs * context_probs
+                hZ_X_ub = -1.0 * x.sum(dim=1).mean() # scalar
+
+                loss_actual = hZ_X_ub - hZ
+                avg_loss_actual += loss_actual / len(batches)
+
+                # stack this batch's probabilities in an array for the entire data set
                 all_target_probs = np.vstack((all_target_probs,target_probs.numpy()))
+                all_context_probs = np.vstack((all_context_probs,context_probs.numpy()))
+
+                # stack this batch's reshuffled indices in an array for the entire data set
                 all_idxs = np.vstack((all_idxs,np.atleast_2d(np.array(data.targetIdxs)).T))
-
-                all_context_probs = np.vstack((all_context_probs,context_probs.numpy()))
-                
-                
+        
+        # get rid of first entry, which is 0
         all_target_probs = all_target_probs[1:]
         all_context_probs = all_context_probs[1:]
         all_idxs = all_idxs[1:].astype(int)
         all_idxs = all_idxs[:,0] - 1 # 1-indexing to 0-indexing
 
+        # save class probabilities from target network (softmax form)
         np.save("./{0}_classprobs_softmax_{1}.npy".format(data_path[:-4],self.seed),all_target_probs)
+        
+        # save class probabilities from context network (log-softmax form)
         np.save("./{0}_classprobs_fromcontext_logsoftmax_{1}.npy".format(data_path[:-4],self.seed),all_context_probs)
+        
+        # save reshuffling indices
         np.save("./{0}_idxs_{1}.npy".format(data_path[:-4],self.seed),all_idxs)
-        np.save("./{0}_optimalLoss_{1}.npy".format(data_path[:-4],self.seed),avg_loss_ideal)
         
-        maxMI = (- avg_loss_ideal) * math.log(math.e,2)
-        print("avg_loss_ideal is {0}; max MI is {1}".format(avg_loss_ideal,maxMI))
+        if self.truth_known:
+            # save optimal loss function value
+            np.save("./{0}_optimalLoss_{1}.npy".format(data_path[:-4],self.seed),avg_loss_ideal)
         
-        return
-
-    def cross_validate(self, CVdata_path, CVdata):
-        self.model.eval()
-        batches = CVdata.get_batches(self.batch_size)
+            maxMI_ideal = (-avg_loss_ideal) * math.log(math.e,2)
+            print("avg_loss_ideal is {0}; max MI is {1}".format(avg_loss_ideal,maxMI_ideal))
         
-        all_target_probs = np.zeros((1,self.model.num_labels))
-        all_context_probs = np.zeros((1,self.model.num_labels))
-        all_idxs = np.zeros((1,1))
-
-        avg_loss_ideal = 0.
-        with torch.no_grad():
-            for batch in batches:
-                X, Y1, targetTruths = CVdata.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
-
-                if self.truth_known:
-                    loss_ideal = calculateLoss(targetTruths)
-                    avg_loss_ideal += loss_ideal / len(batches)
-
-                target_probs, target_max_probs, context_probs, context_max_probs = self.model(X, Y1, is_training=False)
-                all_target_probs = np.vstack((all_target_probs,target_probs.numpy()))
-                all_idxs = np.vstack((all_idxs,np.atleast_2d(np.array(CVdata.targetIdxs)).T))
-
-                all_context_probs = np.vstack((all_context_probs,context_probs.numpy()))
-                
-        all_target_probs = all_target_probs[1:]
-        all_context_probs = all_context_probs[1:]
-        all_idxs = all_idxs[1:].astype(int)
-        all_idxs = all_idxs[:,0] - 1 # 1-indexing to 0-indexing
-        
-        print(CVdata_path[:-4])
-
-        np.save("./{0}_classprobs_softmax_{1}.npy".format(CVdata_path[:-4],self.seed),all_target_probs)
-        np.save("./{0}_classprobs_fromcontext_logsoftmax_{1}.npy".format(CVdata_path[:-4],self.seed),all_context_probs)
-        np.save("./{0}_idxs_{1}.npy".format(CVdata_path[:-4],self.seed),all_idxs)
-        np.save("./{0}_optimalLoss_{1}.npy".format(CVdata_path[:-4],self.seed),avg_loss_ideal)
+        # print actual loss function value to stdout
+        maxMI_actual = (-avg_loss_actual) * math.log(math.e,2)
+        print("avg_loss_actual is {0}; max MI is {1}".format(avg_loss_actual,maxMI_actual))
         
         return
 
