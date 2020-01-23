@@ -62,17 +62,21 @@ def main(args):
     #create control, using Control class
     control = Control(model, args.model, args.batch_size, device, logger, TRUTH_KNOWN, args.seed)
     
+    # train the model on the specified data set
     if TRAIN is True:
+        # load previous state of model, if it exists
         if os.path.exists(args.model):
             control.load_model(args.lr)
             print("Resuming...")
         control.train(data, args.data, args.lr, args.epochs)
 
+    # evaluate the model's performance on a holdout test set
     elif CROSS_VALIDATE is True:
         control.load_model(args.lr)
         CVdata = Data(args.num_planet_features, args.num_stellar_features, args.CVdata, TRUTH_KNOWN)
         control.classify(args.CVdata, CVdata)
 
+    # evaluate the model's performance on the training set
     elif os.path.exists(args.model):
         control.load_model(args.lr)
         control.classify(args.data, data)
