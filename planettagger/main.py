@@ -52,7 +52,7 @@ def main(args):
     data = Data(args.num_planet_features, args.num_stellar_features, args.data, TRUTH_KNOWN)
 
     #create model, using MMIModel class
-    model = MMIModel(args.num_planet_features, args.num_stellar_features, args.num_labels, args.width, args.dropout_prob, feature_names, PLOT, SAVEPLOT).to(device)
+    model = MMIModel(args.num_planet_features, args.num_stellar_features, args.num_labels, args.width, args.dropout_prob, feature_names, PLOT, SAVEPLOT, args.plot_path).to(device)
     
     #create logger, using Logger class
     logger = Logger(args.model + '.log', TRAIN)
@@ -123,6 +123,8 @@ if __name__ == '__main__':
                         help='live plot weights?')
     parser.add_argument('--saveplot', type=str, default="False",
                         help='save plot of final weights?')
+    parser.add_argument('--plot_path', type=str, 
+                        help='Where to save plot of final weights', default="./plot")
     parser.add_argument('--cross_validate', type=str, default="False",
                         help='cross-validate the model on a holdout test set?')
     parser.add_argument('--CVdata', type=str,

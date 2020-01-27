@@ -4,6 +4,7 @@ import matplotlib.colors as colors
 import matplotlib.cm as cmx
 from matplotlib import rcParams
 
+# Plotting style parameters
 rcParams['font.family'] = 'serif'
 rcParams['font.sans-serif'] = ['Computer Modern Roman']
 
@@ -15,26 +16,80 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
             context_rep=False, context_width=None,
             pause_time=0.01,showplot=True,save=False,figname=None):
     """
-    weights = a list of numpy arrays. each array contains the weights of 1 layer of the network
     Plot a Torch network, with network connections color-coded by weight.
+
+    Parameters
+    ---------
+    fig : matplotlib.figure.Figure
+        The figure object on which to plot/update
+    cb : matplotlib.colorbar.Colorbar
+        The colorbar object to plot/update
+    plottedWeights : list
+        A list of lists of matplotlib.lines.Line2D objects representing the plotted
+        weights, such that we can adjust the colors of these line objects later.
+    plottedBiases : list
+        A list of lists of matplotlib.lines.Line2D objects representing the plotted
+        biases, such that we can adjust the colors of these line objects later.
+    weights : list
+        A list of numpy arrays of network weights
+    biases : list
+        A list of numpy arrays of network biases
+    net_name : str
+        For the plot title
+    n_planet_features : int
+        The number of training features related to the planet (e.g. 2, if we're
+        training on Rp and P).
+    n_stellar_features : int
+        The number of training features related to the star (e.g. 3, if we're
+        training on Teff, logg, Fe/H).
+    feature_names : list
+        List of feature names
+    context_rep : bool
+        Are we plotting a context network? (or not, i.e. plotting a target network?)
+    context_width : int
+        How wide is the context? (i.e. how many planets to the left/right of the target
+        planet are we looking here?)
+    pause_time : int
+        Time in seconds to pause the data so the figure/axis can catch up
+    showplot : bool
+        Whether to show the figure on the screen
+    save : bool
+        Whether to save the figure
+    figname : str
+        The name to save the figure under
+
+    Returns
+    ---------
+    fig : matplotlib.figure.Figure
+        The figure object on which to plot/update
+    cb : matplotlib.colorbar.Colorbar
+        The colorbar object to plot/update
+    plottedWeights : list
+        A list of lists of matplotlib.lines.Line2D objects representing the plotted
+        weights, such that we can adjust the colors of these line objects later.
+    plottedBiases : list
+        A list of lists of matplotlib.lines.Line2D objects representing the plotted
+        biases, such that we can adjust the colors of these line objects later.
+
     """
 
-    #step 1: figure out architecture.
+    # figure out architecture from structure of "weights" input
     n_layers = len(weights)
     architecture = []
 
     for i in range(n_layers):
         architecture.append(np.shape(weights[i])[0])
 
-    #last layer:
+    # final layer:
     architecture.append(np.shape(weights[-1])[1])
     architecture = np.array((architecture))
-    #print(architecture)
-    depth = len(architecture)
-    width = np.max(architecture) + 1 #including bias node
 
+    depth = len(architecture)
+    width = np.max(architecture) + 1 # maximum width, including bias node
+
+    # setting up plot dimensions to look nice
     # borrowed from corner.py
-    factor = 2.         # size of one neuron (?)
+    factor = 2.            # size of one neuron (?)
     lbdim = 0.3 * factor   # size of left/bottom margin
     trdim = 0.3 * factor   # size of top/right margin
     
@@ -42,10 +97,14 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
     ploth = (factor * depth + factor * (depth - 1.) * whspace) + lbdim + trdim
     plotw = (factor * width + factor * (width - 1.) * whspace) + lbdim + trdim
 
+    # if this is the first time we're plotting this network, we gotta
+    # plot a bunch of new matplotlib.lines.Line2D objects to connect nodes,
+    # and color-code these by weight/bias strength
     if plottedWeights == []:
         # this is the call to matplotlib that allows dynamic plotting
         plt.ion()
 
+        # create figure
         fig, ax = plt.subplots(1, 1, figsize=(2*plotw/9., 7*ploth/9.),dpi=150)
         
         # Format the figure.
@@ -56,14 +115,16 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
                             wspace=whspace, hspace=whspace)
         
 
-        #step 2: draw the network
+        # Draw the network
 
-        #horizontal positions of layers
+        # horizontal positions of layers
         layer_x = np.linspace(0.,1.,(n_layers + 1))
-        #print(layer_x)
+
+        # vertical positions of neurons
         neuron_ys = []
         neuronh = 1./width
 
+        # loop over layers
         for i in range(n_layers+1):
             n_neurons = architecture[i] + 1 # including bias node
 
@@ -82,14 +143,14 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
             neuron_y = np.linspace(0.,1.,n_neurons)
             neuron_ys.append(neuron_y)
 
-            # nodes
+            # plot the feature nodes as open circles
             ax.plot(layer_x[i]*np.ones_like(neuron_y[0:-1]), neuron_y[0:-1], marker='o', ms=11, mfc='None',mec='k',ls='None')
             
-            # bias node
+            # plot the bias node as a gray circle
             if i < n_layers:
                 ax.plot(layer_x[i]*np.ones_like(neuron_y[-1]), neuron_y[-1], marker='o', ms=11, mfc='#CED3D9',mec='k',ls='None')
             
-            # feature names
+            # label input-layer neurons with feature names
             if i == 0:
                 if context_rep is False: # i.e., if this is a single-planet representation
                     for j in range(len(neuron_y[0:-1])):
@@ -119,12 +180,14 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
 
                     ax.set_xlim(-0.55,1.05)
                     ax.set_ylim(-0.05,1.05)
-        #ax.axhline(0.5)
         
-        #colormap details
+        # colormap details
+
+        # set arbitrary colormap limits at first
         cmin = 5.
         cmax = -5.
         
+        # adjust the colormap limits to reflect the dynamic range of the data
         for i in range(n_layers):
             ws = weights[i]
             bs = biases[i]
@@ -138,32 +201,41 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
             if np.max(bs) > cmax:
                 cmax = np.max(bs)
         
+        # set up colormap
         c_abs_max = np.max((np.abs(cmin),np.abs(cmax)))
         cm = plt.get_cmap('Spectral') 
         cNorm  = colors.Normalize(vmin=cmin, vmax=cmax)
         scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
 
-        #step 3: colormap connections by weights
+        # Colormap connections by value of weights
+
+        # empty lists to hold *lists of* weight-colored matplotlib.lines.line2D objects that we draw
+        # (each entry will be a list of matplotlib.lines.line2D objects from 1 layer)
         plottedWeights = []
         plottedBiases = []
 
+        # Loop over layers
         for i in range(n_layers):
             ws = weights[i]
             bs = biases[i]
 
+            # horizontal positions of beginning and end of line
             xStart = layer_x[i]
             xEnd = layer_x[i+1]
 
+            # vertical positions of beginning and end of line
             neuron_y = neuron_ys[i]
             neuron_yp1 = neuron_ys[i+1]
 
+            # empty lists to hold weight-colored matplotlib.lines.line2D objects that we draw in this layer
             plottedWeights_thisLayer = []
             plottedBiases_thisLayer = []
             
-            #regular nodes
+            # plot connections between regular nodes
             for ii in range(0,int(np.shape(ws)[0])):
                 plottedWeights_thisLayer_thisNeuron = []
                 for jj in range(0,int(np.shape(ws)[1])):
+                    # get the color tuple corresponding to this weight
                     w = ws[ii,jj]
                     colorVal = scalarMap.to_rgba(w)
 
@@ -175,14 +247,16 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
                     yStart = neuron_y[ii]
                     yEnd = neuron_yp1[jj]
 
+                    # plot (and name) the matplotlib.lines.line2D object
                     pN = ax.plot(np.array((xStart,xEnd)),np.array((yStart,yEnd)), color=colorVal, ls='-',marker='None',lw=0.5)
                     plottedWeights_thisLayer_thisNeuron.append(pN[0])
+
                 plottedWeights_thisLayer.append(plottedWeights_thisLayer_thisNeuron)
             
-            #bias nodes
+            # plot connections from bias node to regular nodes
             for ii in range(0,len(bs)):
                 b = bs[ii]
-
+                # get the color tuple corresponding to this weight
                 colorVal = scalarMap.to_rgba(b)
                 
                 balpha = np.abs(b)/c_abs_max
@@ -193,12 +267,14 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
                 yStart = neuron_y[-1]
                 yEnd = neuron_yp1[ii]
 
+                # plot (and name) the matplotlib.lines.line2D object
                 pB = ax.plot(np.array((xStart,xEnd)),np.array((yStart,yEnd)), color=colorVal, ls='-',marker='None',lw=0.5)
                 plottedBiases_thisLayer.append(pB[0])
 
             plottedWeights.append(plottedWeights_thisLayer)
             plottedBiases.append(plottedBiases_thisLayer)
 
+        # make the colorbar
         scalarMap.set_array(np.linspace(cmin,cmax,100))
         cb = fig.colorbar(scalarMap, ax=ax, label="weight")
         ax.axis("off")
@@ -209,6 +285,8 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
         else:
             plt.close()
 
+    # if this is *not* the first time we're plotting this network, we only have to update
+    # the colors of the matplotlib.lines.line2D objects in plotted_weights and plotted_biases
     else:
         cmin = 5.
         cmax = -5.
@@ -264,7 +342,6 @@ def plot_net(fig, cb, plottedWeights, plottedBiases,
         scalarMap.set_array(np.linspace(cmin,cmax,100))
         cb.mappable.set_clim(cmin,cmax)
         cb.draw_all()
-        # this pauses the data so the figure/axis can catch up - the amount of pause can be altered above
         plt.pause(pause_time)
 
     if save is True:

@@ -92,7 +92,7 @@ class Control(nn.Module):
             a model.MMIModel object, which inherits from torch.nn.Module
         model_path : str
             a path specifying where the model will be saved
-        batch_size: int
+        batch_size : int
             the size of each training batch
         device : obj
             a torch.device object ('cuda' or 'cpu') 
@@ -150,9 +150,14 @@ class Control(nn.Module):
 
         try:
             for epoch in range(1, epochs + 1):
+                # is it the last epoch?
+                if epoch == epochs:
+                    last_epoch = True
+                else:
+                    last_epoch = False
                 # calculate the average value of the loss function over a training epoch.
                 # also keep track of how long that training epoch took.
-                avg_loss, epoch_time = self.do_epoch(data, optimizer)
+                avg_loss, epoch_time = self.do_epoch(data, optimizer, last_epoch)
 
                 # calculate the number of bits of information learned
                 bits = (- avg_loss) * math.log(math.e,2)
@@ -189,7 +194,7 @@ class Control(nn.Module):
 
         return 
 
-    def do_epoch(self, data, optimizer):
+    def do_epoch(self, data, optimizer, last_epoch):
         """
         Do one training epoch.
 
@@ -206,6 +211,8 @@ class Control(nn.Module):
             The average value of the loss function over the batches.
         epoch_time : float
             How long it took to do this training epoch, in seconds
+        last_epoch : bool
+            Whether this is the last training epoch or not
         """
 
         # set the model (an object which inherits from torch.nn.Module) in training mode
@@ -217,7 +224,7 @@ class Control(nn.Module):
 
         # organize the data into batches
         batches = data.get_batches(self.batch_size)
-
+        
         for batch in batches:
             # set gradients of all model parameters to 0
             self.model.zero_grad()
@@ -232,7 +239,7 @@ class Control(nn.Module):
             X, Y, targetTruths = data.tensorize_batch(batch, self.device, self.model.width, self.truth_known)
 
             # run MMIModel.forward(X, Y, is_training=True)
-            loss = self.model(X, Y, is_training=True)
+            loss = self.model(X, Y, batch_size=self.batch_size, last_epoch=last_epoch, is_training=True)
 
             # Add the value of the loss function for this batch
             # into the average loss over all the batches
@@ -307,7 +314,7 @@ class Control(nn.Module):
                 # class probabilities of the target planets from the target network
                 # (target_probs) and from the context network (context_probs).
                 # Both are torch tensors of shape (Batchsize, nClasses).
-                target_probs, context_probs = self.model(X, Y, is_training=False)
+                target_probs, context_probs = self.model(X, Y, batch_size=self.batch_size, last_epoch=False, is_training=False)
 
                 # calculate the avg value of the loss function over this batch
                 pZ = target_probs.mean(0)
