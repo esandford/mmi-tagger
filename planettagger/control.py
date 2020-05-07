@@ -82,7 +82,7 @@ class Control(nn.Module):
 
     """
 
-    def __init__(self, model, model_path, batch_size, device, logger, truth_known, seed):
+    def __init__(self, model, model_path, batch_size, device, logger, truth_known, seed, results_path):
         """
         Initialize the Control object.
 
@@ -112,6 +112,7 @@ class Control(nn.Module):
         self.logger = logger
         self.truth_known = truth_known
         self.seed = seed
+        self.results_path = results_path
 
     def train(self, data, data_path, lr, epochs):
         """
@@ -190,7 +191,8 @@ class Control(nn.Module):
         # write the value of the loss function at each epoch to a .npy file, 
         # for easier analysis later (i.e. so we don't have to parse the log file)
         epochLosses = np.vstack((np.array(epochLog).T,np.array(lossLog).T)).T
-        np.save("./{0}_losses_{1}.npy".format(data_path[:-4],self.seed),epochLosses)
+
+        np.save("{0}{1}_losses_{2}.npy".format(self.results_path,data_path.split("/")[-1][:-4],self.seed),epochLosses)
 
         return 
 
@@ -340,17 +342,17 @@ class Control(nn.Module):
         all_idxs = all_idxs[:,0] - 1 # 1-indexing to 0-indexing
 
         # save class probabilities from target network (softmax form)
-        np.save("./{0}_classprobs_softmax_{1}.npy".format(data_path[:-4],self.seed),all_target_probs)
+        np.save("{0}{1}_classprobs_softmax_{2}.npy".format(self.results_path,data_path.split("/")[-1][:-4],self.seed),all_target_probs)
         
         # save class probabilities from context network (log-softmax form)
-        np.save("./{0}_classprobs_fromcontext_logsoftmax_{1}.npy".format(data_path[:-4],self.seed),all_context_probs)
+        np.save("{0}{1}_classprobs_fromcontext_logsoftmax_{2}.npy".format(self.results_path,data_path.split("/")[-1][:-4],self.seed),all_context_probs)
         
         # save reshuffling indices
-        np.save("./{0}_idxs_{1}.npy".format(data_path[:-4],self.seed),all_idxs)
+        np.save("{0}{1}_idxs_{2}.npy".format(self.results_path,data_path.split("/")[-1][:-4],self.seed),all_idxs)
         
         if self.truth_known:
             # save optimal loss function value
-            np.save("./{0}_optimalLoss_{1}.npy".format(data_path[:-4],self.seed),avg_loss_ideal)
+            np.save("{0}{1}_optimalLoss_{2}.npy".format(self.results_path,data_path.split("/")[-1][:-4],self.seed),avg_loss_ideal)
         
             maxMI_ideal = (-avg_loss_ideal) * math.log(math.e,2)
             print("avg_loss_ideal is {0}; max MI is {1}".format(avg_loss_ideal,maxMI_ideal))

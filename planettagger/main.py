@@ -60,7 +60,7 @@ def main(args):
     logger.log('Random seed: %d' % args.seed)
     
     #create control, using Control class
-    control = Control(model, args.model, args.batch_size, device, logger, TRUTH_KNOWN, args.seed)
+    control = Control(model, args.model, args.batch_size, device, logger, TRUTH_KNOWN, args.seed, args.results_path)
     
     # train the model on the specified data set
     if TRAIN is True:
@@ -91,6 +91,8 @@ if __name__ == '__main__':
                         help='model path')
     parser.add_argument('data', type=str,
                         help='data path')
+    parser.add_argument('--results_path', type=str,
+                        help='path to directory where results are saved')
     parser.add_argument('--num_labels', type=int, default=45,
                         help='number of labels to induce [%(default)d]')
     parser.add_argument('--num_planet_features', type=int, default=2,

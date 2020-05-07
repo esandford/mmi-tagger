@@ -1,6 +1,7 @@
 #!/bin/bash
 
 model_file="./realPlanets/10classes/realKOIs_allFeatures_10classes_seed=3"
+results_path="./realPlanets/10classes/"
 data_file="./realPlanets/realKOIs_allFeatures_70percent.txt"
 CVdata_file="./realPlanets/realKOIs_allFeatures_30percent.txt"
 
@@ -28,13 +29,13 @@ plot_path="./simulatedPlanets/crossValidation/testrunscript/plot"
 #training
 if [ $train -eq 1 ]
 then
-    python main.py $model_file $data_file --num_planet_features $num_planet_features --num_stellar_features $num_stellar_features --feature_names $feature_names --num_labels $num_labels --batch_size $batch_size --epochs $epochs --width $width --seed $seed --dropout_prob $dropout_prob --lr $lr --truth_known $truth_known --plot $plot --saveplot $saveplot --plot_path $plot_path --train "true"
+    python main.py $model_file $data_file --results_path $results_path --num_planet_features $num_planet_features --num_stellar_features $num_stellar_features --feature_names $feature_names --num_labels $num_labels --batch_size $batch_size --epochs $epochs --width $width --seed $seed --dropout_prob $dropout_prob --lr $lr --truth_known $truth_known --plot $plot --saveplot $saveplot --plot_path $plot_path --train "true"
 #evaluating performance on holdout test set
 elif [ $cross_validate -eq 1 ]
 then
-    python main.py $model_file $data_file --num_planet_features $num_planet_features --num_stellar_features $num_stellar_features --feature_names $feature_names --num_labels $num_labels --batch_size $batch_size --epochs $epochs --width $width --seed $seed --dropout_prob $dropout_prob --lr $lr --truth_known $truth_known --train "false" --cross_validate "true" --CVdata $CVdata_file
+    python main.py $model_file $data_file --results_path $results_path --num_planet_features $num_planet_features --num_stellar_features $num_stellar_features --feature_names $feature_names --num_labels $num_labels --batch_size $batch_size --epochs $epochs --width $width --seed $seed --dropout_prob $dropout_prob --lr $lr --truth_known $truth_known --train "false" --cross_validate "true" --CVdata $CVdata_file
 #evaluating performance on training set
 else
-    python main.py $model_file $data_file --num_planet_features $num_planet_features --num_stellar_features $num_stellar_features --feature_names $feature_names --num_labels $num_labels --batch_size $batch_size --epochs $epochs --width $width --seed $seed --dropout_prob $dropout_prob --lr $lr --truth_known $truth_known --train "false" --cross_validate "false"
+    python main.py $model_file $data_file --results_path $results_path --num_planet_features $num_planet_features --num_stellar_features $num_stellar_features --feature_names $feature_names --num_labels $num_labels --batch_size $batch_size --epochs $epochs --width $width --seed $seed --dropout_prob $dropout_prob --lr $lr --truth_known $truth_known --train "false" --cross_validate "false"
 fi
 
