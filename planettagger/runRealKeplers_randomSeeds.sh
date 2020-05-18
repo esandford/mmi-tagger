@@ -3,9 +3,10 @@
 data_file="./realPlanets/realKOIs_allFeatures_70percent.txt"
 CVdata_file="./realPlanets/realKOIs_allFeatures_30percent.txt"
 
-num_planet_features=3
-num_stellar_features=3
-feature_names="[Rp,P,insol,Teff,logg,Fe/H]"
+num_planet_features=2
+num_stellar_features=2
+#feature_names="[Rp,P,insol,Teff,logg,Fe/H]"
+feature_names="[Rp,P,Teff,logg]"
 batch_size=100
 epochs=500
 width=2
@@ -19,7 +20,7 @@ saveplot="false"
 plot_path="./simulatedPlanets/crossValidation/testrunscript/plot"
 
 nstart=2
-nend=10
+nend=15
 
 sstart=0
 send=99
