@@ -321,7 +321,7 @@ class ContextPlanetRep(nn.Module):
         super(ContextPlanetRep, self).__init__()
 
         # Number of nodes per layer, from input to output
-        self.architecture = [num_stellar_features + (2*width*num_planet_features), 100, 10, num_labels]
+        self.architecture = [num_stellar_features + (2*width*num_planet_features), 5, 4, num_labels]
         
         # Network layers
         self.linear1 = nn.Linear(self.architecture[0],self.architecture[1])
@@ -398,7 +398,7 @@ class TargetPlanetRep(nn.Module):
         """
         super(TargetPlanetRep, self).__init__()
 
-        self.architecture = [num_planet_features, 100, 10, num_labels]
+        self.architecture = [num_planet_features, 5, 4, num_labels]
         self.linear1 = nn.Linear(self.architecture[0], self.architecture[1])
         self.linear2 = nn.Linear(self.architecture[1], self.architecture[2])
         self.linear3 = nn.Linear(self.architecture[2], self.architecture[3])

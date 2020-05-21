@@ -1,12 +1,12 @@
 #!/bin/bash
 
-data_file="./realPlanets/realKOIs_allFeatures_70percent.txt"
-CVdata_file="./realPlanets/realKOIs_allFeatures_30percent.txt"
+data_file="./realPlanets_log_simpleNetwork/realKOIs_allFeatures_70percent.txt"
+CVdata_file="./realPlanets_log_simpleNetwork/realKOIs_allFeatures_30percent.txt"
 
 num_planet_features=2
 num_stellar_features=2
 #feature_names="[Rp,P,insol,Teff,logg,Fe/H]"
-feature_names="[Rp,P,Teff,logg]"
+feature_names="[logRp,logP,Teff,logg]"
 batch_size=100
 epochs=500
 width=2
@@ -20,15 +20,15 @@ saveplot="false"
 plot_path="./simulatedPlanets/crossValidation/testrunscript/plot"
 
 nstart=2
-nend=15
+nend=10
 
 sstart=0
 send=99
 
 for num_labels in `seq $nstart $nend`; do
   for seed in `seq $sstart $send`; do
-    model_file=`echo "./realPlanets/"$num_labels"classes/realKOIs_allFeatures_"$num_labels"classes_seed="$seed`
-    results_path=`echo "./realPlanets/"$num_labels"classes/"`
+    model_file=`echo "./realPlanets_log_simpleNetwork/"$num_labels"classes/realKOIs_allFeatures_"$num_labels"classes_seed="$seed`
+    results_path=`echo "./realPlanets_log_simpleNetwork/"$num_labels"classes/"`
     echo $model_file
     echo $results_path
 
