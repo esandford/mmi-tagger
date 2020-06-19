@@ -80,7 +80,8 @@ class Data(object):
         with open(self.data_path, "rb") as picklefile:
             trainingDat = pickle.load(picklefile)
             for sys in trainingDat:
-                self.systems.append([add(planet) for planet in sys])
+                #sys[1:] reflects the fact that the first entry in "sys" is the Kepler ID, an integer.
+                self.systems.append([add(planet) for planet in sys[1:]])
 
         # if truth is known, format the true classes appropriately
         if truth_known:
@@ -88,7 +89,7 @@ class Data(object):
             with open(truthPath, "rb") as truthfile:
                 truthsDat = pickle.load(truthfile)
                 for sys in truthsDat:
-                    self.truths.append([truth for truth in sys])
+                    self.truths.append([truth for truth in sys[1:]])
 
         return
 
